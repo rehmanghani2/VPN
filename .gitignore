@@ -1,0 +1,107 @@
+# ==========================================
+# Commercial VPN Platform - Root .gitignore
+# ==========================================
+
+# --- Environment & Secret Keys ---
+.env
+.env.local
+.env.production
+.env.staging
+*.key
+*.psk
+*.priv
+*.pem
+/root/wireguard-clients/
+
+# --- Operating Systems ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# --- IDEs & Editors ---
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.swp
+*~
+
+# --- Node.js / NestJS Backend ---
+backend/node_modules/
+backend/dist/
+backend/coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.npm/
+.eslintcache
+
+# --- Flutter / Dart ---
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/.pub-cache/
+mobile/.pub/
+mobile/build/
+
+# Flutter Symbol artifacts
+mobile/**/*.js.deps
+mobile/**/*.js.map
+
+# --- Android ---
+mobile/android/**/gradle-wrapper.jar
+mobile/android/.gradle
+mobile/android/captures/
+mobile/android/gradlew
+mobile/android/gradlew.bat
+mobile/android/local.properties
+mobile/android/**/GeneratedPluginRegistrant.java
+mobile/android/**/build/
+mobile/android/**/bin/
+mobile/android/**/*.keystore
+mobile/android/**/*.jks
+
+# --- iOS ---
+mobile/ios/**/frameworks/
+mobile/ios/**/Pods/
+mobile/ios/**/.symlinks/
+mobile/ios/Flutter/Flutter.framework
+mobile/ios/Flutter/Flutter.podspec
+mobile/ios/Flutter/Generated.xcconfig
+mobile/ios/Flutter/app.flx
+mobile/ios/Flutter/app.zip
+mobile/ios/Flutter/flutter_assets/
+mobile/ios/Flutter/App.framework
+mobile/ios/ServiceDefinitions.json
+mobile/ios/Runner/GeneratedPluginRegistrant.h
+mobile/ios/Runner/GeneratedPluginRegistrant.m
+mobile/ios/**/*.mode1v3
+mobile/ios/**/*.mode2v3
+mobile/ios/**/*.moved-aside
+mobile/ios/**/*.pbxuser
+mobile/ios/**/*.perspectivev3
+mobile/ios/**/DerivedData/
+
+# --- Windows Native ---
+mobile/windows/flutter/ephemeral/
+mobile/windows/**/build/
+mobile/windows/runner/Release/
+mobile/windows/runner/Debug/
+mobile/windows/runner/profile/
+mobile/windows/**/*.vcxproj.user
+
+# --- Docker & Infrastructure ---
+infrastructure/docker/postgres_data/
+infrastructure/docker/redis_data/
