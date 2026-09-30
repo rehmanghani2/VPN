@@ -5,7 +5,7 @@ export declare class VpnController {
     constructor(vpnService: VpnService);
     listServers(): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.ServerStatus;
+        status: string;
         name: string;
         countryCode: string;
         countryName: string;

@@ -13,14 +13,14 @@ export declare class AuthController {
         user: {
             id: string;
             email: string;
-            status: import(".prisma/client").$Enums.UserStatus;
-            role: import(".prisma/client").$Enums.Role;
+            status: string;
+            role: string;
             subscription: {
                 id: string;
-                status: import(".prisma/client").$Enums.SubscriptionStatus;
+                status: string;
                 createdAt: Date;
                 updatedAt: Date;
-                planType: import(".prisma/client").$Enums.PlanType;
+                planType: string;
                 maxDevices: number;
                 expiresAt: Date | null;
                 userId: string;
@@ -35,14 +35,14 @@ export declare class AuthController {
         user: {
             id: string;
             email: string;
-            status: import(".prisma/client").$Enums.UserStatus;
-            role: import(".prisma/client").$Enums.Role;
+            status: string;
+            role: string;
             subscription: {
                 id: string;
-                status: import(".prisma/client").$Enums.SubscriptionStatus;
+                status: string;
                 createdAt: Date;
                 updatedAt: Date;
-                planType: import(".prisma/client").$Enums.PlanType;
+                planType: string;
                 maxDevices: number;
                 expiresAt: Date | null;
                 userId: string;
@@ -58,33 +58,33 @@ export declare class AuthController {
     getMe(userId: string): Promise<{
         activeSubscription: {
             id: string;
-            status: import(".prisma/client").$Enums.SubscriptionStatus;
+            status: string;
             createdAt: Date;
             updatedAt: Date;
-            planType: import(".prisma/client").$Enums.PlanType;
+            planType: string;
             maxDevices: number;
             expiresAt: Date | null;
             userId: string;
         };
         id: string;
         email: string;
-        status: import(".prisma/client").$Enums.UserStatus;
-        role: import(".prisma/client").$Enums.Role;
+        status: string;
+        role: string;
         createdAt: Date;
         devices: {
             id: string;
             createdAt: Date;
             name: string;
             deviceIdentifier: string;
-            platform: import(".prisma/client").$Enums.Platform;
+            platform: string;
             lastSeenAt: Date;
         }[];
         subscriptions: {
             id: string;
-            status: import(".prisma/client").$Enums.SubscriptionStatus;
+            status: string;
             createdAt: Date;
             updatedAt: Date;
-            planType: import(".prisma/client").$Enums.PlanType;
+            planType: string;
             maxDevices: number;
             expiresAt: Date | null;
             userId: string;

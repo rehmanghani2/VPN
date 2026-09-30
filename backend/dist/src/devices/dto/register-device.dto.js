@@ -9,9 +9,16 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RegisterDeviceDto = void 0;
+exports.RegisterDeviceDto = exports.Platform = void 0;
 const class_validator_1 = require("class-validator");
-const client_1 = require("@prisma/client");
+var Platform;
+(function (Platform) {
+    Platform["ANDROID"] = "ANDROID";
+    Platform["IOS"] = "IOS";
+    Platform["WINDOWS"] = "WINDOWS";
+    Platform["MACOS"] = "MACOS";
+    Platform["LINUX"] = "LINUX";
+})(Platform || (exports.Platform = Platform = {}));
 class RegisterDeviceDto {
 }
 exports.RegisterDeviceDto = RegisterDeviceDto;
@@ -26,7 +33,7 @@ __decorate([
     __metadata("design:type", String)
 ], RegisterDeviceDto.prototype, "name", void 0);
 __decorate([
-    (0, class_validator_1.IsEnum)(client_1.Platform),
+    (0, class_validator_1.IsEnum)(Platform),
     __metadata("design:type", String)
 ], RegisterDeviceDto.prototype, "platform", void 0);
 __decorate([

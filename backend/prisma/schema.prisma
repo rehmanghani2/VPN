@@ -1,5 +1,5 @@
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -7,57 +7,12 @@ generator client {
   provider = "prisma-client-js"
 }
 
-enum UserStatus {
-  ACTIVE
-  SUSPENDED
-  PENDING
-}
-
-enum Role {
-  USER
-  ADMIN
-}
-
-enum Platform {
-  ANDROID
-  IOS
-  WINDOWS
-  MACOS
-  LINUX
-}
-
-enum ServerStatus {
-  ONLINE
-  DEGRADED
-  DRAINING
-  OFFLINE
-  MAINTENANCE
-}
-
-enum PeerStatus {
-  ACTIVE
-  INACTIVE
-  REVOKED
-}
-
-enum PlanType {
-  FREE
-  BASIC
-  PREMIUM
-}
-
-enum SubscriptionStatus {
-  ACTIVE
-  EXPIRED
-  CANCELLED
-}
-
 model User {
   id            String         @id @default(uuid())
   email         String         @unique
   passwordHash  String
-  status        UserStatus     @default(ACTIVE)
-  role          Role           @default(USER)
+  status        String         @default("ACTIVE")
+  role          String         @default("USER")
   devices       Device[]
   subscriptions Subscription[]
   createdAt     DateTime       @default(now())
@@ -72,7 +27,7 @@ model Device {
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   deviceIdentifier String
   name             String
-  platform         Platform
+  platform         String    @default("WINDOWS")
   publicKey        String
   lastSeenAt       DateTime  @default(now())
   vpnPeers         VpnPeer[]
@@ -84,57 +39,57 @@ model Device {
 }
 
 model VpnServer {
-  id          String       @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String
   countryCode String
   countryName String
   city        String
   hostname    String
   publicIp    String
-  wgPort      Int          @default(51820)
+  wgPort      Int       @default(51820)
   wgPublicKey String
-  status      ServerStatus @default(ONLINE)
-  capacity    Int          @default(500)
-  currentLoad Int          @default(0)
-  subnetV4    String       @default("10.8.0.0/24")
-  subnetV6    String       @default("fd42:42:42::/64")
-  dnsV4       String       @default("10.8.0.1")
-  dnsV6       String       @default("fd42:42:42::1")
+  status      String    @default("ONLINE")
+  capacity    Int       @default(500)
+  currentLoad Int       @default(0)
+  subnetV4    String    @default("10.8.0.0/24")
+  subnetV6    String    @default("fd42:42:42::/64")
+  dnsV4       String    @default("10.8.0.1")
+  dnsV6       String    @default("fd42:42:42::1")
   vpnPeers    VpnPeer[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@map("vpn_servers")
 }
 
 model VpnPeer {
-  id              String     @id @default(uuid())
+  id              String    @id @default(uuid())
   deviceId        String
-  device          Device     @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  device          Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
   serverId        String
-  server          VpnServer  @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  server          VpnServer @relation(fields: [serverId], references: [id], onDelete: Cascade)
   allocatedIpV4   String
   allocatedIpV6   String
   clientPublicKey String
   presharedKey    String?
-  status          PeerStatus @default(ACTIVE)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  status          String    @default("ACTIVE")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@unique([serverId, allocatedIpV4])
   @@map("vpn_peers")
 }
 
 model Subscription {
-  id         String             @id @default(uuid())
+  id         String    @id @default(uuid())
   userId     String
-  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  planType   PlanType           @default(FREE)
-  status     SubscriptionStatus @default(ACTIVE)
-  maxDevices Int                @default(1)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planType   String    @default("FREE")
+  status     String    @default("ACTIVE")
+  maxDevices Int       @default(1)
   expiresAt  DateTime?
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@map("subscriptions")
 }

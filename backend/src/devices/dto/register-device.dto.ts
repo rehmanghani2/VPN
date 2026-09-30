@@ -1,5 +1,12 @@
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
-import { Platform } from '@prisma/client';
+
+export enum Platform {
+  ANDROID = 'ANDROID',
+  IOS = 'IOS',
+  WINDOWS = 'WINDOWS',
+  MACOS = 'MACOS',
+  LINUX = 'LINUX',
+}
 
 export class RegisterDeviceDto {
   @IsString()
