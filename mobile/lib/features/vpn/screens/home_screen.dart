@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/services/vpn_bridge.dart';
 import '../vpn_provider.dart';
-import '../../auth/auth_provider.dart';
 import 'servers_screen.dart';
 import '../../settings/screens/settings_screen.dart';
 
@@ -21,7 +19,6 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vpn = context.watch<VpnProvider>();
-    final auth = context.watch<AuthProvider>();
 
     final isConnected = vpn.isConnected;
     final isConnecting = vpn.isConnecting;

@@ -4,6 +4,7 @@ import '../../core/services/api_service.dart';
 import '../../core/services/storage_service.dart';
 import '../../core/services/vpn_bridge.dart';
 import '../../core/constants/api_constants.dart';
+import 'package:dio/dio.dart';
 import 'models/vpn_server.dart';
 import 'models/vpn_tunnel.dart';
 
@@ -128,8 +129,7 @@ class VpnProvider extends ChangeNotifier {
         _errorMessage = 'Failed to establish WireGuard tunnel';
         notifyListeners();
       }
-    } catch (e: any) {
-      // If backend call fails, fallback to local test tunnel
+    } on DioException catch (e) {
       if (_currentTunnel == null) {
         final targetServer = _selectedServer ?? _servers.firstOrNull;
         _currentTunnel = VpnTunnel(
@@ -148,9 +148,13 @@ class VpnProvider extends ChangeNotifier {
         await _bridge.startTunnel(_currentTunnel!);
       } else {
         _state = TunnelState.error;
-        _errorMessage = e.response?.data?['message'] ?? 'Connection request failed';
+        _errorMessage = e.response?.data?['message']?.toString() ?? 'Connection request failed';
         notifyListeners();
       }
+    } catch (_) {
+      _state = TunnelState.error;
+      _errorMessage = 'An unexpected connection error occurred';
+      notifyListeners();
     }
   }
 

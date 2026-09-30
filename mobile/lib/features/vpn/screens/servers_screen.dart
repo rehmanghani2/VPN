@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../vpn_provider.dart';
-import '../models/vpn_server.dart';
 
 class ServersScreen extends StatefulWidget {
   const ServersScreen({super.key});

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../core/services/api_service.dart';
 import '../../core/services/storage_service.dart';
 import '../../core/constants/api_constants.dart';
+import 'package:dio/dio.dart';
 import 'models/user_model.dart';
 
 enum AuthStatus { initial, authenticated, unauthenticated, loading }
@@ -66,9 +67,14 @@ class AuthProvider extends ChangeNotifier {
 
       notifyListeners();
       return true;
-    } catch (e: any) {
+    } on DioException catch (e) {
       _status = AuthStatus.unauthenticated;
-      _errorMessage = e.response?.data?['message'] ?? 'Login failed. Please check credentials.';
+      _errorMessage = e.response?.data?['message']?.toString() ?? 'Login failed. Please check credentials.';
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _status = AuthStatus.unauthenticated;
+      _errorMessage = 'An unexpected error occurred.';
       notifyListeners();
       return false;
     }
@@ -96,9 +102,14 @@ class AuthProvider extends ChangeNotifier {
 
       notifyListeners();
       return true;
-    } catch (e: any) {
+    } on DioException catch (e) {
       _status = AuthStatus.unauthenticated;
-      _errorMessage = e.response?.data?['message'] ?? 'Registration failed.';
+      _errorMessage = e.response?.data?['message']?.toString() ?? 'Registration failed.';
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _status = AuthStatus.unauthenticated;
+      _errorMessage = 'An unexpected error occurred during registration.';
       notifyListeners();
       return false;
     }
