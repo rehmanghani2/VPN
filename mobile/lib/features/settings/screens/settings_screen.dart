@@ -10,6 +10,7 @@ import 'threat_shield_screen.dart';
 import '../../billing/screens/subscription_screen.dart';
 import '../../devices/screens/devices_screen.dart';
 import '../../speedtest/screens/speed_test_screen.dart';
+import '../../diagnostics/screens/leak_test_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -436,30 +437,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppTheme.surfaceLight),
             ),
-            child: ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(10),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.speed, color: AppTheme.primary, size: 20),
+                  ),
+                  title: const Text(
+                    'Speed & Latency Test',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                  subtitle: const Text(
+                    'Benchmark live ping jitter, download & upload Mbps through VPN',
+                    style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  ),
+                  trailing: const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SpeedTestScreen()),
+                    );
+                  },
                 ),
-                child: const Icon(Icons.speed, color: AppTheme.primary, size: 20),
-              ),
-              title: const Text(
-                'Speed & Latency Test',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-              ),
-              subtitle: const Text(
-                'Benchmark live ping jitter, download & upload Mbps through VPN',
-                style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-              ),
-              trailing: const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SpeedTestScreen()),
-                );
-              },
+                const Divider(height: 1, color: AppTheme.surfaceLight),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.connectedGreen.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.verified_user_rounded, color: AppTheme.connectedGreen, size: 20),
+                  ),
+                  title: const Text(
+                    'Zero-Leak Privacy Audit',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                  subtitle: const Text(
+                    'Audit IPv4 exposure, DNS hijack, IPv6 leaks, and WebRTC STUN isolation',
+                    style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  ),
+                  trailing: const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LeakTestScreen()),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ],

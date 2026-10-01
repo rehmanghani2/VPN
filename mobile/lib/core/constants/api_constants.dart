@@ -29,4 +29,8 @@ class ApiConstants {
   static const String speedtestDownload = '/vpn/speedtest/download';
   static const String speedtestUpload = '/vpn/speedtest/upload';
   static const String threatShieldStats = '/vpn/speedtest/threat-shield/stats';
+
+  // Privacy & Zero-Leak Diagnostics
+  static const String diagnosticsIp = '/diagnostics/ip';
+  static const String diagnosticsLeakAudit = '/diagnostics/leak-audit';
 }

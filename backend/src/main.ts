@@ -25,6 +25,44 @@ async function bootstrap() {
     credentials: true,
   });
 
+  // Security Headers & Rate Limiting Middleware
+  const requestCounts = new Map<string, { count: number; resetTime: number }>();
+  app.use((req: any, res: any, next: any) => {
+    // 1. Enterprise Security Headers
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+    // 2. Sliding Window Rate Limiting on sensitive and diagnostic endpoints
+    const isSensitive = req.url.includes('/auth/') || req.url.includes('/vpn/connect');
+    const isDiagnostic = req.url.includes('/diagnostics/');
+    const shouldLimit = isSensitive || isDiagnostic;
+    if (shouldLimit) {
+      const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+      const now = Date.now();
+      const clientData = requestCounts.get(clientIp);
+
+      if (!clientData || now > clientData.resetTime) {
+        requestCounts.set(clientIp, { count: 1, resetTime: now + 60000 });
+      } else {
+        clientData.count++;
+        const maxLimit = isSensitive ? 30 : 60;
+        if (clientData.count > maxLimit) {
+          res.status(429).json({
+            statusCode: 429,
+            error: 'Too Many Requests',
+            message: 'Rate limit exceeded. Please wait before retrying.',
+          });
+          return;
+        }
+      }
+    }
+
+    next();
+  });
+
   const port = process.env.PORT || 3000;
   await app.listen(port);
   logger.log(`=======================================================`);

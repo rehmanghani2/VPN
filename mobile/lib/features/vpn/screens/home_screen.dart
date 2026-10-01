@@ -7,6 +7,7 @@ import '../widgets/telemetry_graph.dart';
 import 'servers_screen.dart';
 import '../../settings/screens/settings_screen.dart';
 import '../../speedtest/screens/speed_test_screen.dart';
+import '../../diagnostics/screens/leak_test_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -54,6 +55,16 @@ class HomeScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const SpeedTestScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.verified_user_rounded, color: AppTheme.textSecondary),
+            tooltip: 'Zero-Leak Privacy Audit',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LeakTestScreen()),
               );
             },
           ),
