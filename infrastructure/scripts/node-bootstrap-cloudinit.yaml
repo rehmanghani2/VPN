@@ -1,0 +1,209 @@
+#cloud-config
+# ==============================================================================
+# Commercial VPN Platform - Zero-Touch Edge Node Provisioning (Cloud-Init)
+# Compatible with Ubuntu 22.04/24.04 LTS & Debian 12
+# Automatically provisions WireGuard, Unbound DNS, BBR, Node Agent, and
+# self-registers with the NestJS Central Control Plane.
+# ==============================================================================
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - wireguard
+  - wireguard-tools
+  - unbound
+  - iptables
+  - iptables-persistent
+  - curl
+  - jq
+  - ufw
+  - git
+
+write_files:
+  - path: /etc/sysctl.d/99-vpn-optimization.conf
+    permissions: '0644'
+    content: |
+      # Enable IPv4 and IPv6 Forwarding
+      net.ipv4.ip_forward = 1
+      net.ipv6.conf.all.forwarding = 1
+
+      # Google BBR Congestion Control & High-Throughput Buffers
+      net.core.default_qdisc = fq
+      net.ipv4.tcp_congestion_control = bbr
+      net.core.rmem_max = 67108864
+      net.core.wmem_max = 67108864
+      net.ipv4.tcp_rmem = 4096 87380 33554432
+      net.ipv4.tcp_wmem = 4096 65536 33554432
+      net.core.netdev_max_backlog = 10000
+
+  - path: /etc/unbound/unbound.conf.d/vpn-dns.conf
+    permissions: '0644'
+    content: |
+      server:
+          verbosity: 1
+          interface: 10.8.0.1
+          interface: 127.0.0.1
+          port: 53
+          do-ip4: yes
+          do-udp: yes
+          do-tcp: yes
+          access-control: 10.8.0.0/24 allow
+          access-control: 127.0.0.0/8 allow
+          access-control: 0.0.0.0/0 refuse
+          hide-identity: yes
+          hide-version: yes
+          qname-minimisation: yes
+          harden-glue: yes
+          harden-dnssec-stripped: yes
+          cache-min-ttl: 300
+          cache-max-ttl: 86400
+      forward-zone:
+          name: "."
+          forward-addr: 1.1.1.1@53#cloudflare-dns.com
+          forward-addr: 1.0.0.1@53#cloudflare-dns.com
+          forward-addr: 9.9.9.9@53#dns.quad9.net
+
+runcmd:
+  # Apply sysctl network tuning
+  - sysctl --system
+
+  # Install Node.js 20 LTS for Node Agent
+  - curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+  - apt-get install -y nodejs
+
+  # Setup WireGuard keys & interface
+  - mkdir -p /etc/wireguard
+  - chmod 700 /etc/wireguard
+  - umask 077
+  - wg genkey | tee /etc/wireguard/server_private.key | wg pubkey > /etc/wireguard/server_public.key
+  - SERVER_PRIV_KEY=$(cat /etc/wireguard/server_private.key)
+  - SERVER_PUB_KEY=$(cat /etc/wireguard/server_public.key)
+  - DEFAULT_IFACE=$(ip route show default | awk '{print $5}')
+  - PUBLIC_IP=$(curl -s4 https://api.ipify.org || curl -s4 https://ifconfig.me)
+
+  # Write base wg0.conf
+  - |
+    cat <<EOF > /etc/wireguard/wg0.conf
+    [Interface]
+    Address = 10.8.0.1/24, fd42:42:42::1/64
+    ListenPort = 51820
+    PrivateKey = $SERVER_PRIV_KEY
+    SaveConfig = false
+
+    # Hardware NAT routing and zero-leak firewalling
+    PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o $DEFAULT_IFACE -j MASQUERADE; ip6tables -A FORWARD -i wg0 -j ACCEPT; ip6tables -t nat -A POSTROUTING -o $DEFAULT_IFACE -j MASQUERADE
+    PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o $DEFAULT_IFACE -j MASQUERADE; ip6tables -D FORWARD -i wg0 -j ACCEPT; ip6tables -t nat -D POSTROUTING -o $DEFAULT_IFACE -j MASQUERADE
+    EOF
+
+  # Enable Unbound DNS & WireGuard wg0
+  - systemctl restart unbound
+  - systemctl enable unbound
+  - systemctl enable wg-quick@wg0
+  - systemctl start wg-quick@wg0
+
+  # Clone/Deploy Node Agent
+  - mkdir -p /opt/vpn-node-agent
+  - |
+    cat << 'EOF' > /opt/vpn-node-agent/agent.js
+    const http = require('http');
+    const { exec } = require('child_process');
+    const PORT = 51821;
+    const AUTH_TOKEN = process.env.NODE_TOKEN || 'vpn-node-agent-secure-token-2026';
+
+    const server = http.createServer((req, res) => {
+      const auth = req.headers['x-node-token'];
+      if (req.url === '/health' && req.method === 'GET') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ status: 'UP', timestamp: new Date().toISOString() }));
+      }
+      if (auth !== AUTH_TOKEN) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: 'Unauthorized' }));
+      }
+      if (req.url === '/peers/add' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+          try {
+            const { publicKey, allowedIp } = JSON.parse(body);
+            if (!publicKey || !allowedIp) {
+              res.writeHead(400); return res.end(JSON.stringify({ error: 'Missing publicKey or allowedIp' }));
+            }
+            exec(`wg set wg0 peer ${publicKey} allowed-ips ${allowedIp}/32`, (err) => {
+              if (err) { res.writeHead(500); return res.end(JSON.stringify({ error: err.message })); }
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: true, message: 'Peer added' }));
+            });
+          } catch(e) { res.writeHead(400); res.end(JSON.stringify({ error: 'Invalid JSON' })); }
+        });
+      } else if (req.url === '/peers/remove' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+          try {
+            const { publicKey } = JSON.parse(body);
+            exec(`wg set wg0 peer ${publicKey} remove`, (err) => {
+              if (err) { res.writeHead(500); return res.end(JSON.stringify({ error: err.message })); }
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: true, message: 'Peer removed' }));
+            });
+          } catch(e) { res.writeHead(400); res.end(JSON.stringify({ error: 'Invalid JSON' })); }
+        });
+      } else if (req.url === '/metrics' && req.method === 'GET') {
+        exec('wg show wg0 peers', (err, stdout) => {
+          const peerCount = stdout ? stdout.trim().split('\n').filter(Boolean).length : 0;
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ activePeers: peerCount, uptime: process.uptime() }));
+        });
+      } else {
+        res.writeHead(404); res.end();
+      }
+    });
+    server.listen(PORT, '0.0.0.0', () => console.log('Node Agent listening on port ' + PORT));
+    EOF
+
+  # Create Node Agent Service
+  - |
+    cat <<EOF > /etc/systemd/system/vpn-node-agent.service
+    [Unit]
+    Description=Commercial VPN Edge Node Agent
+    After=network.target wg-quick@wg0.service
+
+    [Service]
+    Type=simple
+    Environment=NODE_TOKEN=vpn-node-agent-secure-token-2026
+    WorkingDirectory=/opt/vpn-node-agent
+    ExecStart=/usr/bin/node /opt/vpn-node-agent/agent.js
+    Restart=always
+    RestartSec=5
+
+    [Install]
+    WantedBy=multi-user.target
+    EOF
+
+  - systemctl daemon-reload
+  - systemctl enable vpn-node-agent
+  - systemctl start vpn-node-agent
+
+  # Self-Register Node with Central Backend Control Plane
+  - |
+    BACKEND_URL="${BACKEND_CONTROL_URL:-http://control.commercialvpn.internal:3000/api/v1}"
+    NODE_NAME="$(hostname -s | tr '[:lower:]' '[:upper:]')-EDGE"
+    curl -s -X POST "$BACKEND_URL/vpn/nodes/register" \
+      -H "Content-Type: application/json" \
+      -H "X-Node-Token: vpn-node-agent-secure-token-2026" \
+      -d "{
+        \"name\": \"$NODE_NAME\",
+        \"countryCode\": \"${NODE_COUNTRY_CODE:-DE}\",
+        \"countryName\": \"${NODE_COUNTRY_NAME:-Germany}\",
+        \"city\": \"${NODE_CITY:-Frankfurt}\",
+        \"hostname\": \"$(hostname -f)\",
+        \"publicIp\": \"$PUBLIC_IP\",
+        \"wgPort\": 51820,
+        \"wgPublicKey\": \"$SERVER_PUB_KEY\",
+        \"capacity\": 500,
+        \"subnetV4\": \"10.8.0.0/24\",
+        \"dnsV4\": \"10.8.0.1\",
+        \"isObfuscated\": false
+      }" || true

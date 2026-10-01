@@ -9,15 +9,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.VpnModule = void 0;
 const common_1 = require("@nestjs/common");
 const vpn_controller_1 = require("./vpn.controller");
+const node_controller_1 = require("./node.controller");
 const vpn_service_1 = require("./vpn.service");
+const node_monitor_service_1 = require("./node-monitor.service");
 let VpnModule = class VpnModule {
 };
 exports.VpnModule = VpnModule;
 exports.VpnModule = VpnModule = __decorate([
     (0, common_1.Module)({
-        controllers: [vpn_controller_1.VpnController],
-        providers: [vpn_service_1.VpnService],
-        exports: [vpn_service_1.VpnService],
+        controllers: [vpn_controller_1.VpnController, node_controller_1.NodeController],
+        providers: [vpn_service_1.VpnService, node_monitor_service_1.NodeMonitorService],
+        exports: [vpn_service_1.VpnService, node_monitor_service_1.NodeMonitorService],
     })
 ], VpnModule);
 //# sourceMappingURL=vpn.module.js.map
