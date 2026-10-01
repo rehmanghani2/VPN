@@ -28,6 +28,9 @@ let DevicesController = class DevicesController {
     async register(userId, dto) {
         return this.devicesService.registerDevice(userId, dto);
     }
+    async disconnect(userId, deviceId) {
+        return this.devicesService.disconnectDevice(userId, deviceId);
+    }
     async remove(userId, deviceId) {
         return this.devicesService.removeDevice(userId, deviceId);
     }
@@ -48,6 +51,15 @@ __decorate([
     __metadata("design:paramtypes", [String, register_device_dto_1.RegisterDeviceDto]),
     __metadata("design:returntype", Promise)
 ], DevicesController.prototype, "register", null);
+__decorate([
+    (0, common_1.Post)(':id/disconnect'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('id')),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], DevicesController.prototype, "disconnect", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     __param(0, (0, current_user_decorator_1.CurrentUser)('id')),

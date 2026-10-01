@@ -16,4 +16,11 @@ class ApiConstants {
   static const String servers = '/vpn/servers';
   static const String connect = '/vpn/connect';
   static const String disconnect = '/vpn/disconnect';
+
+  // Billing & Subscriptions
+  static const String billingPlans = '/billing/plans';
+  static const String billingSubscription = '/billing/subscription';
+  static const String billingCheckout = '/billing/create-checkout-session';
+  static const String billingVerifyReceipt = '/billing/verify-mobile-receipt';
+  static const String billingUpgradeTest = '/billing/upgrade-test';
 }

@@ -50,13 +50,21 @@ export class VpnService {
     // 2. Validate user subscription
     const subscription = await this.prisma.subscription.findFirst({
       where: { userId, status: 'ACTIVE' },
+      orderBy: { createdAt: 'desc' },
     });
 
     if (!subscription) {
       throw new ForbiddenException('An active subscription is required to connect');
     }
 
-    // 3. Resolve target server (Specific Server or Smart Connect)
+    // 3. Subscription Tier Feature Validation (Stealth Anti-DPI requires PRO/FAMILY)
+    if (dto.protocol === 'stealth_obfuscated' && subscription.planType === 'FREE') {
+      throw new ForbiddenException(
+        'Stealth Anti-DPI servers require a PRO or FAMILY subscription. Please upgrade your plan.',
+      );
+    }
+
+    // 4. Resolve target server (Specific Server or Smart Connect)
     let server = null;
     if (dto.serverId) {
       server = await this.prisma.vpnServer.findUnique({
@@ -64,6 +72,11 @@ export class VpnService {
       });
       if (!server || server.status === 'OFFLINE' || server.status === 'MAINTENANCE') {
         throw new BadRequestException('Selected VPN server is currently unavailable');
+      }
+      if (server.isObfuscated && subscription.planType === 'FREE') {
+        throw new ForbiddenException(
+          'Connecting to Stealth Anti-DPI servers requires a PRO or FAMILY subscription. Please upgrade.',
+        );
       }
     } else {
       if (dto.protocol === 'stealth_obfuscated') {
@@ -74,14 +87,50 @@ export class VpnService {
       }
       if (!server) {
         // Smart Connect: pick server with lowest current load
+        // If free plan, filter out obfuscated stealth servers
         server = await this.prisma.vpnServer.findFirst({
-          where: { status: 'ONLINE' },
+          where: {
+            status: 'ONLINE',
+            ...(subscription.planType === 'FREE' ? { isObfuscated: false } : {}),
+          },
           orderBy: { currentLoad: 'asc' },
         });
       }
       if (!server) {
         throw new NotFoundException('No available VPN servers found');
       }
+    }
+
+    // 5. Concurrent Active Connection Quota Enforcement
+    const otherActivePeers = await this.prisma.vpnPeer.findMany({
+      where: {
+        device: { userId },
+        status: 'ACTIVE',
+        deviceId: { not: device.id },
+      },
+      include: { server: true, device: true },
+      orderBy: { updatedAt: 'asc' },
+    });
+
+    if (otherActivePeers.length + 1 > subscription.maxDevices) {
+      // Auto-evict oldest active session to prevent disruption
+      const oldest = otherActivePeers[0];
+      await this.prisma.vpnPeer.update({
+        where: { id: oldest.id },
+        data: { status: 'INACTIVE' },
+      });
+      await this.prisma.vpnServer.update({
+        where: { id: oldest.serverId },
+        data: { currentLoad: { decrement: 1 } },
+      });
+      if (oldest.server?.publicIp) {
+        await this.syncPeerToNode(oldest.server.publicIp, 'remove', {
+          publicKey: oldest.clientPublicKey,
+        });
+      }
+      this.logger.log(
+        `[QUOTA AUTO-EVICT] Evicted oldest session on device "${oldest.device.name}" for user ${userId} (Limit: ${subscription.maxDevices}).`,
+      );
     }
 
     // 4. Check if peer already exists for this device & server

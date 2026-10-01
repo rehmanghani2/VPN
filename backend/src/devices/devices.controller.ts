@@ -6,6 +6,8 @@ import {
   Param,
   Body,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { DevicesService } from './devices.service';
 import { RegisterDeviceDto } from './dto/register-device.dto';
@@ -28,6 +30,15 @@ export class DevicesController {
     @Body() dto: RegisterDeviceDto,
   ) {
     return this.devicesService.registerDevice(userId, dto);
+  }
+
+  @Post(':id/disconnect')
+  @HttpCode(HttpStatus.OK)
+  async disconnect(
+    @CurrentUser('id') userId: string,
+    @Param('id') deviceId: string,
+  ) {
+    return this.devicesService.disconnectDevice(userId, deviceId);
   }
 
   @Delete(':id')

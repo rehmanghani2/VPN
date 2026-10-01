@@ -6,11 +6,11 @@ export declare class VpnController {
     listServers(): Promise<{
         id: string;
         name: string;
+        status: string;
         countryCode: string;
         countryName: string;
         city: string;
         hostname: string;
-        status: string;
         capacity: number;
         currentLoad: number;
         isObfuscated: boolean;

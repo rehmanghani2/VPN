@@ -6,6 +6,8 @@ import '../../../core/services/vpn_bridge.dart';
 import '../../auth/auth_provider.dart';
 import '../../auth/screens/login_screen.dart';
 import 'split_tunneling_screen.dart';
+import '../../billing/screens/subscription_screen.dart';
+import '../../devices/screens/devices_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -79,21 +81,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 2),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.primary.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    '${auth.user?.planType} PLAN (${auth.user?.maxDevices} MAX DEVICES)',
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.primary,
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primary.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        '${auth.user?.planType} PLAN (${auth.user?.maxDevices} MAX DEVICES)',
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.primary,
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -101,6 +107,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
+                      // Upgrade / Manage Subscription button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const SubscriptionScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.workspace_premium, size: 18),
+                          label: Text(
+                            auth.user?.planType == 'FREE'
+                                ? 'Upgrade to Pro'
+                                : 'Manage Subscription',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Manage Connected Devices button
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppTheme.surfaceLight),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const DevicesScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.devices, size: 18, color: AppTheme.primary),
+                          label: const Text('Connected Devices & Sessions'),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton(

@@ -13,6 +13,7 @@ const prisma_module_1 = require("./prisma/prisma.module");
 const auth_module_1 = require("./auth/auth.module");
 const devices_module_1 = require("./devices/devices.module");
 const vpn_module_1 = require("./vpn/vpn.module");
+const billing_module_1 = require("./billing/billing.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -27,6 +28,7 @@ exports.AppModule = AppModule = __decorate([
             auth_module_1.AuthModule,
             devices_module_1.DevicesModule,
             vpn_module_1.VpnModule,
+            billing_module_1.BillingModule,
         ],
     })
 ], AppModule);

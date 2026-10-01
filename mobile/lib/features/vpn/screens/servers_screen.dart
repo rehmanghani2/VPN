@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../vpn_provider.dart';
+import '../../auth/auth_provider.dart';
+import '../../billing/screens/subscription_screen.dart';
 
 class ServersScreen extends StatefulWidget {
   const ServersScreen({super.key});
@@ -13,6 +15,84 @@ class ServersScreen extends StatefulWidget {
 class _ServersScreenState extends State<ServersScreen> {
   String _searchQuery = '';
   String _filterTab = 'ALL'; // 'ALL', 'STANDARD', 'STEALTH'
+
+  void _showPaywallModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.warningYellow.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.shield,
+                color: AppTheme.warningYellow,
+                size: 32,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '🥷 Stealth Anti-DPI Server',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Stealth servers camouflage WireGuard traffic as standard HTTPS on Port 443 with AmneziaWG packet padding. This feature requires a PRO or FAMILY subscription.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppTheme.textSecondary.withOpacity(0.9),
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const SubscriptionScreen(),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Upgrade to Pro',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,6 +238,11 @@ class _ServersScreenState extends State<ServersScreen> {
                   padding: const EdgeInsets.only(bottom: 8.0),
                   child: InkWell(
                     onTap: () {
+                      final auth = context.read<AuthProvider>();
+                      if (srv.isObfuscated && (auth.user?.planType == 'FREE' || !auth.isAuthenticated)) {
+                        _showPaywallModal(context);
+                        return;
+                      }
                       vpn.selectServer(srv);
                       Navigator.pop(context);
                     },

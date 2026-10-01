@@ -49,9 +49,13 @@ let VpnService = VpnService_1 = class VpnService {
         }
         const subscription = await this.prisma.subscription.findFirst({
             where: { userId, status: 'ACTIVE' },
+            orderBy: { createdAt: 'desc' },
         });
         if (!subscription) {
             throw new common_1.ForbiddenException('An active subscription is required to connect');
+        }
+        if (dto.protocol === 'stealth_obfuscated' && subscription.planType === 'FREE') {
+            throw new common_1.ForbiddenException('Stealth Anti-DPI servers require a PRO or FAMILY subscription. Please upgrade your plan.');
         }
         let server = null;
         if (dto.serverId) {
@@ -60,6 +64,9 @@ let VpnService = VpnService_1 = class VpnService {
             });
             if (!server || server.status === 'OFFLINE' || server.status === 'MAINTENANCE') {
                 throw new common_1.BadRequestException('Selected VPN server is currently unavailable');
+            }
+            if (server.isObfuscated && subscription.planType === 'FREE') {
+                throw new common_1.ForbiddenException('Connecting to Stealth Anti-DPI servers requires a PRO or FAMILY subscription. Please upgrade.');
             }
         }
         else {
@@ -71,13 +78,42 @@ let VpnService = VpnService_1 = class VpnService {
             }
             if (!server) {
                 server = await this.prisma.vpnServer.findFirst({
-                    where: { status: 'ONLINE' },
+                    where: {
+                        status: 'ONLINE',
+                        ...(subscription.planType === 'FREE' ? { isObfuscated: false } : {}),
+                    },
                     orderBy: { currentLoad: 'asc' },
                 });
             }
             if (!server) {
                 throw new common_1.NotFoundException('No available VPN servers found');
             }
+        }
+        const otherActivePeers = await this.prisma.vpnPeer.findMany({
+            where: {
+                device: { userId },
+                status: 'ACTIVE',
+                deviceId: { not: device.id },
+            },
+            include: { server: true, device: true },
+            orderBy: { updatedAt: 'asc' },
+        });
+        if (otherActivePeers.length + 1 > subscription.maxDevices) {
+            const oldest = otherActivePeers[0];
+            await this.prisma.vpnPeer.update({
+                where: { id: oldest.id },
+                data: { status: 'INACTIVE' },
+            });
+            await this.prisma.vpnServer.update({
+                where: { id: oldest.serverId },
+                data: { currentLoad: { decrement: 1 } },
+            });
+            if (oldest.server?.publicIp) {
+                await this.syncPeerToNode(oldest.server.publicIp, 'remove', {
+                    publicKey: oldest.clientPublicKey,
+                });
+            }
+            this.logger.log(`[QUOTA AUTO-EVICT] Evicted oldest session on device "${oldest.device.name}" for user ${userId} (Limit: ${subscription.maxDevices}).`);
         }
         let peer = await this.prisma.vpnPeer.findFirst({
             where: { deviceId: device.id, serverId: server.id },
