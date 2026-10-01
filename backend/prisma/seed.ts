@@ -35,7 +35,7 @@ async function main() {
   // 2. Seed Default Edge Servers
   const servers = [
     {
-      name: 'Germany #1 - Frankfurt',
+      name: 'Germany #1 - Frankfurt (Stealth Anti-DPI)',
       countryCode: 'DE',
       countryName: 'Germany',
       city: 'Frankfurt',
@@ -48,6 +48,9 @@ async function main() {
       currentLoad: 12,
       subnetV4: '10.8.0.0/24',
       dnsV4: '10.8.0.1',
+      isObfuscated: true,
+      obfuscationPort: 443,
+      obfuscationProtocol: 'WIREGUARD_OBFUSCATED',
     },
     {
       name: 'USA #1 - New York',
@@ -63,6 +66,9 @@ async function main() {
       currentLoad: 34,
       subnetV4: '10.8.0.0/24',
       dnsV4: '10.8.0.1',
+      isObfuscated: false,
+      obfuscationPort: 443,
+      obfuscationProtocol: 'NONE',
     },
     {
       name: 'Singapore #1 - Jurong',
@@ -78,6 +84,27 @@ async function main() {
       currentLoad: 8,
       subnetV4: '10.8.0.0/24',
       dnsV4: '10.8.0.1',
+      isObfuscated: false,
+      obfuscationPort: 443,
+      obfuscationProtocol: 'NONE',
+    },
+    {
+      name: 'UK #1 - London (Camouflage TLS)',
+      countryCode: 'GB',
+      countryName: 'United Kingdom',
+      city: 'London',
+      hostname: 'uk1.vpnplatform.internal',
+      publicIp: '198.51.100.40',
+      wgPort: 51820,
+      wgPublicKey: 'Uk1Mb25kb25TZWN1cmVLZXlGb3JDbGllbnRzMjAyNg==',
+      status: 'ONLINE' as const,
+      capacity: 500,
+      currentLoad: 19,
+      subnetV4: '10.8.0.0/24',
+      dnsV4: '10.8.0.1',
+      isObfuscated: true,
+      obfuscationPort: 443,
+      obfuscationProtocol: 'SHADOWSOCKS_TLS',
     },
   ];
 
@@ -88,6 +115,16 @@ async function main() {
     if (!existing) {
       await prisma.vpnServer.create({ data: srv });
       console.log(`VPN server seeded: ${srv.name}`);
+    } else {
+      await prisma.vpnServer.update({
+        where: { id: existing.id },
+        data: {
+          isObfuscated: srv.isObfuscated,
+          obfuscationPort: srv.obfuscationPort,
+          obfuscationProtocol: srv.obfuscationProtocol,
+        },
+      });
+      console.log(`VPN server updated with obfuscation: ${srv.name}`);
     }
   }
 

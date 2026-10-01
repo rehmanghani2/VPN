@@ -8,6 +8,9 @@ class VpnServer {
   final String status;
   final int capacity;
   final int currentLoad;
+  final bool isObfuscated;
+  final int obfuscationPort;
+  final String obfuscationProtocol;
 
   VpnServer({
     required this.id,
@@ -19,6 +22,9 @@ class VpnServer {
     required this.status,
     required this.capacity,
     required this.currentLoad,
+    this.isObfuscated = false,
+    this.obfuscationPort = 443,
+    this.obfuscationProtocol = 'NONE',
   });
 
   factory VpnServer.fromJson(Map<String, dynamic> json) {
@@ -32,6 +38,9 @@ class VpnServer {
       status: json['status'] ?? 'ONLINE',
       capacity: json['capacity'] ?? 500,
       currentLoad: json['currentLoad'] ?? 0,
+      isObfuscated: json['isObfuscated'] ?? false,
+      obfuscationPort: json['obfuscationPort'] ?? 443,
+      obfuscationProtocol: json['obfuscationProtocol'] ?? 'NONE',
     );
   }
 

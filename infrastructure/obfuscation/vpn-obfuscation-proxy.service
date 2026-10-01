@@ -1,0 +1,25 @@
+[Unit]
+Description=Antigravity VPN Anti-DPI Stealth & Camouflage Proxy
+After=network.target wg-quick@wg0.service
+Wants=wg-quick@wg0.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/vpn-obfuscation-proxy
+ExecStart=/usr/bin/node /opt/vpn-obfuscation-proxy/obfuscation-proxy.js
+Restart=always
+RestartSec=5
+
+# Configuration
+Environment=OBFUSCATION_PORT=443
+Environment=WG_LOCAL_HOST=127.0.0.1
+Environment=WG_LOCAL_PORT=51820
+
+# Security Hardening
+LimitNOFILE=65536
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

@@ -29,6 +29,9 @@ export class VpnService {
         status: true,
         capacity: true,
         currentLoad: true,
+        isObfuscated: true,
+        obfuscationPort: true,
+        obfuscationProtocol: true,
       },
       orderBy: [{ countryName: 'asc' }, { city: 'asc' }],
     });
@@ -63,11 +66,19 @@ export class VpnService {
         throw new BadRequestException('Selected VPN server is currently unavailable');
       }
     } else {
-      // Smart Connect: pick server with lowest current load
-      server = await this.prisma.vpnServer.findFirst({
-        where: { status: 'ONLINE' },
-        orderBy: { currentLoad: 'asc' },
-      });
+      if (dto.protocol === 'stealth_obfuscated') {
+        server = await this.prisma.vpnServer.findFirst({
+          where: { status: 'ONLINE', isObfuscated: true },
+          orderBy: { currentLoad: 'asc' },
+        });
+      }
+      if (!server) {
+        // Smart Connect: pick server with lowest current load
+        server = await this.prisma.vpnServer.findFirst({
+          where: { status: 'ONLINE' },
+          orderBy: { currentLoad: 'asc' },
+        });
+      }
       if (!server) {
         throw new NotFoundException('No available VPN servers found');
       }
@@ -147,19 +158,33 @@ export class VpnService {
     });
 
     // 6. Construct WireGuard Client Configuration Payload
+    const isStealth = dto.protocol === 'stealth_obfuscated' || (server as any).isObfuscated;
+    const targetPort = isStealth && (server as any).isObfuscated ? (server as any).obfuscationPort : server.wgPort;
+
     return {
       tunnel: {
         serverName: server.name,
         countryCode: server.countryCode,
         city: server.city,
-        endpoint: `${server.publicIp}:${server.wgPort}`,
+        endpoint: `${server.publicIp}:${targetPort}`,
         serverPublicKey: server.wgPublicKey,
         clientAddressV4: `${peer.allocatedIpV4}/24`,
         clientAddressV6: `${peer.allocatedIpV6}/64`,
         dns: [server.dnsV4, server.dnsV6],
         allowedIPs: ['0.0.0.0/0', '::/0'],
-        mtu: 1360,
+        mtu: isStealth ? 1280 : 1360,
         keepalive: 25,
+        isObfuscated: (server as any).isObfuscated || false,
+        obfuscationProtocol: (server as any).obfuscationProtocol || 'NONE',
+        obfuscationParams: (server as any).isObfuscated
+          ? {
+              junkPacketCount: 4,
+              junkPacketMinSize: 40,
+              junkPacketMaxSize: 70,
+              initiationHeader: '0xa1b2c3d4',
+              responseHeader: '0xd4c3b2a1',
+            }
+          : null,
       },
       peerId: peer.id,
       status: 'CONNECTED',

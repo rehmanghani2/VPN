@@ -10,6 +10,9 @@ class VpnTunnel {
   final List<String> allowedIPs;
   final int mtu;
   final int keepalive;
+  final bool isObfuscated;
+  final String obfuscationProtocol;
+  final Map<String, dynamic>? obfuscationParams;
 
   VpnTunnel({
     required this.serverName,
@@ -23,6 +26,9 @@ class VpnTunnel {
     required this.allowedIPs,
     required this.mtu,
     required this.keepalive,
+    this.isObfuscated = false,
+    this.obfuscationProtocol = 'NONE',
+    this.obfuscationParams,
   });
 
   factory VpnTunnel.fromJson(Map<String, dynamic> json) {
@@ -38,6 +44,11 @@ class VpnTunnel {
       allowedIPs: List<String>.from(json['allowedIPs'] ?? ['0.0.0.0/0', '::/0']),
       mtu: json['mtu'] ?? 1360,
       keepalive: json['keepalive'] ?? 25,
+      isObfuscated: json['isObfuscated'] ?? false,
+      obfuscationProtocol: json['obfuscationProtocol'] ?? 'NONE',
+      obfuscationParams: json['obfuscationParams'] != null
+          ? Map<String, dynamic>.from(json['obfuscationParams'])
+          : null,
     );
   }
 
@@ -54,6 +65,9 @@ class VpnTunnel {
       'allowedIPs': allowedIPs,
       'mtu': mtu,
       'keepalive': keepalive,
+      'isObfuscated': isObfuscated,
+      'obfuscationProtocol': obfuscationProtocol,
+      if (obfuscationParams != null) 'obfuscationParams': obfuscationParams,
     };
   }
 }

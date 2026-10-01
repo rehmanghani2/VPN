@@ -33,6 +33,9 @@ let VpnService = VpnService_1 = class VpnService {
                 status: true,
                 capacity: true,
                 currentLoad: true,
+                isObfuscated: true,
+                obfuscationPort: true,
+                obfuscationProtocol: true,
             },
             orderBy: [{ countryName: 'asc' }, { city: 'asc' }],
         });
@@ -60,10 +63,18 @@ let VpnService = VpnService_1 = class VpnService {
             }
         }
         else {
-            server = await this.prisma.vpnServer.findFirst({
-                where: { status: 'ONLINE' },
-                orderBy: { currentLoad: 'asc' },
-            });
+            if (dto.protocol === 'stealth_obfuscated') {
+                server = await this.prisma.vpnServer.findFirst({
+                    where: { status: 'ONLINE', isObfuscated: true },
+                    orderBy: { currentLoad: 'asc' },
+                });
+            }
+            if (!server) {
+                server = await this.prisma.vpnServer.findFirst({
+                    where: { status: 'ONLINE' },
+                    orderBy: { currentLoad: 'asc' },
+                });
+            }
             if (!server) {
                 throw new common_1.NotFoundException('No available VPN servers found');
             }
@@ -124,19 +135,32 @@ let VpnService = VpnService_1 = class VpnService {
             publicKey: device.publicKey,
             allowedIps: [`${peer.allocatedIpV4}/32`, `${peer.allocatedIpV6}/128`],
         });
+        const isStealth = dto.protocol === 'stealth_obfuscated' || server.isObfuscated;
+        const targetPort = isStealth && server.isObfuscated ? server.obfuscationPort : server.wgPort;
         return {
             tunnel: {
                 serverName: server.name,
                 countryCode: server.countryCode,
                 city: server.city,
-                endpoint: `${server.publicIp}:${server.wgPort}`,
+                endpoint: `${server.publicIp}:${targetPort}`,
                 serverPublicKey: server.wgPublicKey,
                 clientAddressV4: `${peer.allocatedIpV4}/24`,
                 clientAddressV6: `${peer.allocatedIpV6}/64`,
                 dns: [server.dnsV4, server.dnsV6],
                 allowedIPs: ['0.0.0.0/0', '::/0'],
-                mtu: 1360,
+                mtu: isStealth ? 1280 : 1360,
                 keepalive: 25,
+                isObfuscated: server.isObfuscated || false,
+                obfuscationProtocol: server.obfuscationProtocol || 'NONE',
+                obfuscationParams: server.isObfuscated
+                    ? {
+                        junkPacketCount: 4,
+                        junkPacketMinSize: 40,
+                        junkPacketMaxSize: 70,
+                        initiationHeader: '0xa1b2c3d4',
+                        responseHeader: '0xd4c3b2a1',
+                    }
+                    : null,
             },
             peerId: peer.id,
             status: 'CONNECTED',

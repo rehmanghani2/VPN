@@ -13,6 +13,9 @@ export declare class VpnController {
         status: string;
         capacity: number;
         currentLoad: number;
+        isObfuscated: boolean;
+        obfuscationPort: number;
+        obfuscationProtocol: string;
     }[]>;
     connect(userId: string, dto: ConnectVpnDto): Promise<{
         tunnel: {
@@ -27,6 +30,15 @@ export declare class VpnController {
             allowedIPs: string[];
             mtu: number;
             keepalive: number;
+            isObfuscated: any;
+            obfuscationProtocol: any;
+            obfuscationParams: {
+                junkPacketCount: number;
+                junkPacketMinSize: number;
+                junkPacketMaxSize: number;
+                initiationHeader: string;
+                responseHeader: string;
+            };
         };
         peerId: string;
         status: string;

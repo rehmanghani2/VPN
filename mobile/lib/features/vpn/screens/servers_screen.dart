@@ -12,15 +12,21 @@ class ServersScreen extends StatefulWidget {
 
 class _ServersScreenState extends State<ServersScreen> {
   String _searchQuery = '';
+  String _filterTab = 'ALL'; // 'ALL', 'STANDARD', 'STEALTH'
 
   @override
   Widget build(BuildContext context) {
     final vpn = context.watch<VpnProvider>();
     final servers = vpn.servers.where((s) {
       final q = _searchQuery.toLowerCase();
-      return s.countryName.toLowerCase().contains(q) ||
+      final matchesSearch = s.countryName.toLowerCase().contains(q) ||
           s.city.toLowerCase().contains(q) ||
           s.countryCode.toLowerCase().contains(q);
+
+      if (!matchesSearch) return false;
+      if (_filterTab == 'STEALTH') return s.isObfuscated;
+      if (_filterTab == 'STANDARD') return !s.isObfuscated;
+      return true;
     }).toList();
 
     return Scaffold(
@@ -42,6 +48,21 @@ class _ServersScreenState extends State<ServersScreen> {
                   _searchQuery = val;
                 });
               },
+            ),
+          ),
+
+          // Filter Category Chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+            child: Row(
+              children: [
+                _buildFilterChip('ALL', 'All Servers (${vpn.servers.length})'),
+                const SizedBox(width: 8),
+                _buildFilterChip('STANDARD', 'Standard WireGuard'),
+                const SizedBox(width: 8),
+                _buildFilterChip('STEALTH', '🥷 Stealth / Anti-DPI (Port 443)'),
+              ],
             ),
           ),
 
@@ -160,13 +181,43 @@ class _ServersScreenState extends State<ServersScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  srv.countryName,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: AppTheme.textPrimary,
-                                  ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      srv.countryName,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: AppTheme.textPrimary,
+                                      ),
+                                    ),
+                                    if (srv.isObfuscated) ...[
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.warningYellow.withOpacity(0.18),
+                                          borderRadius: BorderRadius.circular(4),
+                                          border: Border.all(color: AppTheme.warningYellow.withOpacity(0.4)),
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.shield, size: 10, color: AppTheme.warningYellow),
+                                            SizedBox(width: 3),
+                                            Text(
+                                              'STEALTH 443',
+                                              style: TextStyle(
+                                                fontSize: 8.5,
+                                                fontWeight: FontWeight.bold,
+                                                color: AppTheme.warningYellow,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                                 Text(
                                   srv.city,
@@ -209,6 +260,33 @@ class _ServersScreenState extends State<ServersScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String filterKey, String label) {
+    final isSelected = _filterTab == filterKey;
+    return InkWell(
+      onTap: () => setState(() => _filterTab = filterKey),
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primary.withOpacity(0.2) : AppTheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppTheme.primary : AppTheme.surfaceLight,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? AppTheme.primary : AppTheme.textSecondary,
+          ),
+        ),
       ),
     );
   }

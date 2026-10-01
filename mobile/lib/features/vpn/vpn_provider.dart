@@ -116,6 +116,7 @@ class VpnProvider extends ChangeNotifier {
         data: {
           'deviceId': deviceId,
           if (_selectedServer != null) 'serverId': _selectedServer!.id,
+          'protocol': _storage.vpnProtocol,
         },
       );
 

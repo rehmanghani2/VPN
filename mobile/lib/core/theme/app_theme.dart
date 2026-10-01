@@ -9,6 +9,7 @@ class AppTheme {
   static const Color primaryDark = Color(0xFF0891B2);
   static const Color connectedGreen = Color(0xFF10B981); // Emerald Green
   static const Color disconnectedRed = Color(0xFFEF4444); // Crimson
+  static const Color warningYellow = Color(0xFFF59E0B);   // Amber Stealth Glow
   static const Color textPrimary = Color(0xFFF8FAFC);
   static const Color textSecondary = Color(0xFF94A3B8);
   static const Color accent = Color(0xFF8B5CF6);     // Purple Accent

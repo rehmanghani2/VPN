@@ -6,9 +6,9 @@ export declare class DevicesController {
     list(userId: string): Promise<({
         vpnPeers: {
             id: string;
+            status: string;
             serverId: string;
             allocatedIpV4: string;
-            status: string;
             server: {
                 name: string;
                 countryCode: string;
@@ -17,25 +17,25 @@ export declare class DevicesController {
         }[];
     } & {
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
         userId: string;
         deviceIdentifier: string;
-        name: string;
         platform: string;
         publicKey: string;
         lastSeenAt: Date;
-        createdAt: Date;
-        updatedAt: Date;
     })[]>;
     register(userId: string, dto: RegisterDeviceDto): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
         userId: string;
         deviceIdentifier: string;
-        name: string;
         platform: string;
         publicKey: string;
         lastSeenAt: Date;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     remove(userId: string, deviceId: string): Promise<{
         message: string;

@@ -76,4 +76,11 @@ class StorageService {
 
   bool get isLocalLanBypassEnabled => _prefs.getBool(_keyBypassLocalLan) ?? true;
   Future<void> setLocalLanBypass(bool value) async => await _prefs.setBool(_keyBypassLocalLan, value);
+
+  // VPN Protocol / Stealth Obfuscation
+  static const String _keyVpnProtocol = 'vpn_protocol'; // 'wireguard' or 'stealth_obfuscated'
+  String get vpnProtocol => _prefs.getString(_keyVpnProtocol) ?? 'wireguard';
+  Future<void> setVpnProtocol(String protocol) async => await _prefs.setString(_keyVpnProtocol, protocol);
+
+  bool get isStealthModeEnabled => vpnProtocol == 'stealth_obfuscated';
 }

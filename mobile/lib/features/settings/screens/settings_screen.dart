@@ -258,22 +258,117 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
                 const Divider(height: 1, color: AppTheme.surfaceLight),
-                const ListTile(
-                  title: Text(
+                ListTile(
+                  title: const Text(
                     'VPN Protocol',
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                   ),
                   subtitle: Text(
-                    'WireGuard (ChaCha20-Poly1305 encryption, UDP)',
-                    style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                    storage.isStealthModeEnabled
+                        ? 'Stealth Camouflage (Anti-DPI, HTTPS Port 443)'
+                        : 'WireGuard Standard (ChaCha20-Poly1305, UDP)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: storage.isStealthModeEnabled ? AppTheme.warningYellow : AppTheme.textSecondary,
+                    ),
                   ),
-                  trailing: Icon(Icons.lock_rounded, size: 18, color: AppTheme.primary),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: storage.isStealthModeEnabled
+                              ? AppTheme.warningYellow.withOpacity(0.15)
+                              : AppTheme.primary.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          storage.isStealthModeEnabled ? 'STEALTH' : 'STANDARD',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: storage.isStealthModeEnabled
+                                ? AppTheme.warningYellow
+                                : AppTheme.primary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+                    ],
+                  ),
+                  onTap: () => _showProtocolSelector(context, storage),
                 ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  void _showProtocolSelector(BuildContext context, StorageService storage) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Select VPN Protocol',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Choose how your tunnel traffic is transmitted across intermediate firewalls and ISPs.',
+                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                ),
+                const SizedBox(height: 16),
+                RadioListTile<String>(
+                  value: 'wireguard',
+                  groupValue: storage.vpnProtocol,
+                  activeColor: AppTheme.primary,
+                  title: const Text('WireGuard Standard (Recommended for Speed)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: const Text('High-performance UDP transport. Best for gaming, 4K streaming, and open internet connections.', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                  onChanged: (val) async {
+                    await storage.setVpnProtocol(val!);
+                    if (mounted) setState(() {});
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  },
+                ),
+                const Divider(height: 1, color: AppTheme.surfaceLight),
+                RadioListTile<String>(
+                  value: 'stealth_obfuscated',
+                  groupValue: storage.vpnProtocol,
+                  activeColor: AppTheme.warningYellow,
+                  title: const Row(
+                    children: [
+                      Text('Stealth Camouflage (Anti-DPI / Censorship)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      SizedBox(width: 6),
+                      Icon(Icons.shield, size: 14, color: AppTheme.warningYellow),
+                    ],
+                  ),
+                  subtitle: const Text('Disguises VPN traffic as standard HTTPS browsing over TCP/UDP Port 443. Bypasses restrictive school/work firewalls, deep-packet inspection, and ISP throttling.', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                  onChanged: (val) async {
+                    await storage.setVpnProtocol(val!);
+                    if (mounted) setState(() {});
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

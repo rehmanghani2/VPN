@@ -49,15 +49,18 @@ model VpnServer {
   wgPort      Int       @default(51820)
   wgPublicKey String
   status      String    @default("ONLINE")
-  capacity    Int       @default(500)
-  currentLoad Int       @default(0)
-  subnetV4    String    @default("10.8.0.0/24")
-  subnetV6    String    @default("fd42:42:42::/64")
-  dnsV4       String    @default("10.8.0.1")
-  dnsV6       String    @default("fd42:42:42::1")
-  vpnPeers    VpnPeer[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  capacity            Int       @default(500)
+  currentLoad         Int       @default(0)
+  subnetV4            String    @default("10.8.0.0/24")
+  subnetV6            String    @default("fd42:42:42::/64")
+  dnsV4               String    @default("10.8.0.1")
+  dnsV6               String    @default("fd42:42:42::1")
+  isObfuscated        Boolean   @default(false)
+  obfuscationPort     Int       @default(443)
+  obfuscationProtocol String    @default("NONE")
+  vpnPeers            VpnPeer[]
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   @@map("vpn_servers")
 }

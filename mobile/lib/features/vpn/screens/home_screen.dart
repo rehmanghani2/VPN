@@ -215,20 +215,22 @@ class HomeScreen extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // Active Features Badges (Kill Switch & Split Tunneling)
+              // Active Features Badges (Kill Switch, Split Tunneling, Stealth Mode)
               Consumer<StorageService>(
                 builder: (context, storage, _) {
                   final hasKillSwitch = storage.isKillSwitchEnabled;
                   final hasSplit = storage.isSplitTunnelingEnabled && storage.splitTunnelingApps.isNotEmpty;
+                  final hasStealth = storage.isStealthModeEnabled || (vpn.currentTunnel?.isObfuscated == true);
 
-                  if (!hasKillSwitch && !hasSplit) return const SizedBox.shrink();
+                  if (!hasKillSwitch && !hasSplit && !hasStealth) return const SizedBox.shrink();
 
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  return Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 6,
                     children: [
                       if (hasKillSwitch)
                         Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: AppTheme.primary.withOpacity(0.12),
@@ -246,7 +248,6 @@ class HomeScreen extends StatelessWidget {
                         ),
                       if (hasSplit)
                         Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: AppTheme.connectedGreen.withOpacity(0.12),
@@ -259,6 +260,23 @@ class HomeScreen extends StatelessWidget {
                               const Icon(Icons.alt_route_rounded, size: 14, color: AppTheme.connectedGreen),
                               const SizedBox(width: 4),
                               Text('Split (${storage.splitTunnelingApps.length})', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.connectedGreen)),
+                            ],
+                          ),
+                        ),
+                      if (hasStealth)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.warningYellow.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppTheme.warningYellow.withOpacity(0.3)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.shield, size: 14, color: AppTheme.warningYellow),
+                              SizedBox(width: 4),
+                              Text('Stealth Anti-DPI', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.warningYellow)),
                             ],
                           ),
                         ),

@@ -8,6 +8,10 @@ export class ConnectVpnDto {
   @IsString()
   @IsOptional()
   serverId?: string; // If omitted, system picks fastest / lowest load (Smart Connect)
+
+  @IsString()
+  @IsOptional()
+  protocol?: string; // 'wireguard' or 'stealth_obfuscated'
 }
 
 export class DisconnectVpnDto {
