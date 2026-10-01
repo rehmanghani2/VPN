@@ -219,7 +219,10 @@ export class VpnService {
         serverPublicKey: server.wgPublicKey,
         clientAddressV4: `${peer.allocatedIpV4}/24`,
         clientAddressV6: `${peer.allocatedIpV6}/64`,
-        dns: [server.dnsV4, server.dnsV6],
+        dns: dto.threatShieldLevel && dto.threatShieldLevel !== 'off'
+          ? ['10.8.0.53', server.dnsV4]
+          : [server.dnsV4, server.dnsV6],
+        threatShieldLevel: dto.threatShieldLevel || 'off',
         allowedIPs: ['0.0.0.0/0', '::/0'],
         mtu: isStealth ? 1280 : 1360,
         keepalive: 25,

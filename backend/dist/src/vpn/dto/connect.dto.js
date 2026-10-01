@@ -29,6 +29,11 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], ConnectVpnDto.prototype, "protocol", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], ConnectVpnDto.prototype, "threatShieldLevel", void 0);
 class DisconnectVpnDto {
 }
 exports.DisconnectVpnDto = DisconnectVpnDto;

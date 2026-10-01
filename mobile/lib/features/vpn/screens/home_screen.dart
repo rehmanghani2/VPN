@@ -6,6 +6,7 @@ import '../vpn_provider.dart';
 import '../widgets/telemetry_graph.dart';
 import 'servers_screen.dart';
 import '../../settings/screens/settings_screen.dart';
+import '../../speedtest/screens/speed_test_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -46,6 +47,16 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.speed, color: AppTheme.textSecondary),
+            tooltip: 'Speed & Latency Benchmark',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SpeedTestScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.tune_rounded, color: AppTheme.textSecondary),
             onPressed: () {

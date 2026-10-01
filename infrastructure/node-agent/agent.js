@@ -70,7 +70,65 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
-  // 2. Authentication check
+  // 2. Built-in Speed Test: Latency Probe (High precision)
+  if (req.method === 'GET' && pathname === '/speedtest/ping') {
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store',
+    });
+    return res.end(JSON.stringify({ timestamp: Date.now(), hrtime: process.hrtime.bigint().toString() }));
+  }
+
+  // 3. Built-in Speed Test: High-Throughput Download Stream
+  if (req.method === 'GET' && pathname === '/speedtest/download') {
+    const sizeMb = Math.min(Math.max(parseInt(url.searchParams.get('sizeMb') || '10', 10), 1), 50);
+    const totalBytes = sizeMb * 1024 * 1024;
+    res.writeHead(200, {
+      'Content-Type': 'application/octet-stream',
+      'Content-Length': totalBytes,
+      'Cache-Control': 'no-cache, no-store',
+    });
+
+    const chunk = Buffer.alloc(64 * 1024, 0x41); // 64KB zero-copy buffer
+    let sentBytes = 0;
+
+    function sendNext() {
+      while (sentBytes < totalBytes) {
+        const remaining = totalBytes - sentBytes;
+        const currentChunk = remaining < chunk.length ? chunk.subarray(0, remaining) : chunk;
+        sentBytes += currentChunk.length;
+        const canContinue = res.write(currentChunk);
+        if (!canContinue) {
+          res.once('drain', sendNext);
+          return;
+        }
+      }
+      res.end();
+    }
+    sendNext();
+    return;
+  }
+
+  // 4. Built-in Speed Test: Upload Sink
+  if (req.method === 'POST' && pathname === '/speedtest/upload') {
+    const startTime = Date.now();
+    let receivedBytes = 0;
+    req.on('data', (chunk) => {
+      receivedBytes += chunk.length;
+    });
+    req.on('end', () => {
+      const durationMs = Math.max(Date.now() - startTime, 1);
+      const speedMbps = ((receivedBytes * 8) / (durationMs / 1000) / (1000 * 1000)).toFixed(2);
+      sendJson(res, 200, {
+        receivedBytes,
+        durationMs,
+        speedMbps: parseFloat(speedMbps),
+      });
+    });
+    return;
+  }
+
+  // 5. Authentication check
   const authHeader = req.headers['x-node-token'] || req.headers['authorization'];
   const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
 

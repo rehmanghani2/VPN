@@ -83,4 +83,9 @@ class StorageService {
   Future<void> setVpnProtocol(String protocol) async => await _prefs.setString(_keyVpnProtocol, protocol);
 
   bool get isStealthModeEnabled => vpnProtocol == 'stealth_obfuscated';
+
+  // Threat Shield (DNS Ad-blocking & Malware Filtering)
+  static const String _keyThreatShieldLevel = 'threat_shield_level'; // 'off', 'malware_only', 'all'
+  String get threatShieldLevel => _prefs.getString(_keyThreatShieldLevel) ?? 'all';
+  Future<void> setThreatShieldLevel(String level) async => await _prefs.setString(_keyThreatShieldLevel, level);
 }

@@ -23,4 +23,10 @@ class ApiConstants {
   static const String billingCheckout = '/billing/create-checkout-session';
   static const String billingVerifyReceipt = '/billing/verify-mobile-receipt';
   static const String billingUpgradeTest = '/billing/upgrade-test';
+
+  // Speed Test & Threat Shield
+  static const String speedtestPing = '/vpn/speedtest/ping';
+  static const String speedtestDownload = '/vpn/speedtest/download';
+  static const String speedtestUpload = '/vpn/speedtest/upload';
+  static const String threatShieldStats = '/vpn/speedtest/threat-shield/stats';
 }

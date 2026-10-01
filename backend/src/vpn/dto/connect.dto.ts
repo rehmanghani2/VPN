@@ -12,6 +12,10 @@ export class ConnectVpnDto {
   @IsString()
   @IsOptional()
   protocol?: string; // 'wireguard' or 'stealth_obfuscated'
+
+  @IsString()
+  @IsOptional()
+  threatShieldLevel?: 'off' | 'malware_only' | 'all'; // DNS Ad-blocking & Malware Filtering
 }
 
 export class DisconnectVpnDto {

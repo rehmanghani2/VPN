@@ -6,8 +6,10 @@ import '../../../core/services/vpn_bridge.dart';
 import '../../auth/auth_provider.dart';
 import '../../auth/screens/login_screen.dart';
 import 'split_tunneling_screen.dart';
+import 'threat_shield_screen.dart';
 import '../../billing/screens/subscription_screen.dart';
 import '../../devices/screens/devices_screen.dart';
+import '../../speedtest/screens/speed_test_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -300,6 +302,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
                 const Divider(height: 1, color: AppTheme.surfaceLight),
+                ListTile(
+                  title: const Text(
+                    'DNS Threat Shield',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                  subtitle: Text(
+                    storage.threatShieldLevel == 'all'
+                        ? 'Full Shield: Blocking Ads, Trackers & Malware'
+                        : storage.threatShieldLevel == 'malware_only'
+                            ? 'Malware & Phishing Protection'
+                            : 'Disabled (Standard Recursive DNS)',
+                    style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: storage.threatShieldLevel != 'off'
+                              ? AppTheme.connectedGreen.withOpacity(0.2)
+                              : AppTheme.surfaceLight,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          storage.threatShieldLevel == 'all'
+                              ? 'MAX'
+                              : storage.threatShieldLevel == 'malware_only'
+                                  ? 'MALWARE'
+                                  : 'OFF',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: storage.threatShieldLevel != 'off'
+                                ? AppTheme.connectedGreen
+                                : AppTheme.textSecondary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+                    ],
+                  ),
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ThreatShieldScreen()),
+                    );
+                    setState(() {});
+                  },
+                ),
+                const Divider(height: 1, color: AppTheme.surfaceLight),
                 SwitchListTile(
                   title: const Text(
                     'Auto-Connect',
@@ -360,6 +414,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onTap: () => _showProtocolSelector(context, storage),
                 ),
               ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // 3. Tools & Diagnostics Section
+          const Text(
+            'TOOLS & BENCHMARKS',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.surfaceLight),
+            ),
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.speed, color: AppTheme.primary, size: 20),
+              ),
+              title: const Text(
+                'Speed & Latency Test',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+              ),
+              subtitle: const Text(
+                'Benchmark live ping jitter, download & upload Mbps through VPN',
+                style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+              ),
+              trailing: const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SpeedTestScreen()),
+                );
+              },
             ),
           ),
         ],
