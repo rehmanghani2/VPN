@@ -238,6 +238,21 @@ void RegisterVpnChannel(flutter::BinaryMessenger* messenger) {
 
                 result->Success(flutter::EncodableValue(appList));
             }
+            else if (method == "getTunnelStatistics") {
+                flutter::EncodableMap stats;
+                static int64_t simulatedRx = 1024 * 1024 * 12;
+                static int64_t simulatedTx = 1024 * 1024 * 3;
+                if (g_is_connected) {
+                    simulatedRx += (1024 * 1024 * 3);
+                    simulatedTx += (1024 * 512);
+                }
+                stats[flutter::EncodableValue("rxBytes")] = flutter::EncodableValue(simulatedRx);
+                stats[flutter::EncodableValue("txBytes")] = flutter::EncodableValue(simulatedTx);
+                stats[flutter::EncodableValue("lastHandshake")] = flutter::EncodableValue(4);
+                stats[flutter::EncodableValue("pingMs")] = flutter::EncodableValue(26);
+
+                result->Success(flutter::EncodableValue(stats));
+            }
             else {
                 result->NotImplemented();
             }

@@ -96,6 +96,16 @@ class VpnBridge {
     } catch (_) {}
   }
 
+  Future<Map<String, dynamic>?> getTunnelStatistics() async {
+    try {
+      final res = await _channel.invokeMethod('getTunnelStatistics');
+      if (res != null && res is Map) {
+        return Map<String, dynamic>.from(res);
+      }
+    } catch (_) {}
+    return null;
+  }
+
   Future<bool> stopTunnel() async {
     _currentState = TunnelState.disconnecting;
     _stateController.add(_currentState);

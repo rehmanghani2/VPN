@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/services/storage_service.dart';
 import '../vpn_provider.dart';
+import '../widgets/telemetry_graph.dart';
 import 'servers_screen.dart';
 import '../../settings/screens/settings_screen.dart';
 
@@ -284,6 +285,103 @@ class HomeScreen extends StatelessWidget {
                   );
                 },
               ),
+
+              // Live Telemetry & Throughput Graph (Phase 5)
+              if (isConnected) ...[
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.surfaceLight.withOpacity(0.5)),
+                  ),
+                  child: Column(
+                    children: [
+                      // Speeds & Ping Row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Download speed
+                          Row(
+                            children: [
+                              const Icon(Icons.arrow_downward_rounded, size: 16, color: AppTheme.primary),
+                              const SizedBox(width: 4),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    vpn.statistics.downloadSpeedStr,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textPrimary),
+                                  ),
+                                  Text(
+                                    'Down (${vpn.statistics.totalDownloadStr})',
+                                    style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          // Upload speed
+                          Row(
+                            children: [
+                              const Icon(Icons.arrow_upward_rounded, size: 16, color: AppTheme.accent),
+                              const SizedBox(width: 4),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    vpn.statistics.uploadSpeedStr,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textPrimary),
+                                  ),
+                                  Text(
+                                    'Up (${vpn.statistics.totalUploadStr})',
+                                    style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          // Latency & Handshake
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 7,
+                                    height: 7,
+                                    decoration: const BoxDecoration(color: AppTheme.connectedGreen, shape: BoxShape.circle),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${vpn.statistics.pingMs} ms',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.connectedGreen),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                'Handshake: ${vpn.statistics.lastHandshakeSeconds}s ago',
+                                style: const TextStyle(fontSize: 9.5, color: AppTheme.textSecondary),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // Live Throughput Graph
+                      TelemetryGraph(
+                        rxHistory: vpn.statistics.rxHistory,
+                        txHistory: vpn.statistics.txHistory,
+                        height: 60,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
 
               const Spacer(),
 
