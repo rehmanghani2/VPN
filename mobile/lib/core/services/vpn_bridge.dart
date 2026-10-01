@@ -34,12 +34,22 @@ class VpnBridge {
     }
   }
 
-  Future<bool> startTunnel(VpnTunnel config) async {
+  Future<bool> startTunnel(
+    VpnTunnel config, {
+    Map<String, dynamic>? splitTunnelConfig,
+    bool killSwitch = false,
+  }) async {
     _currentState = TunnelState.connecting;
     _stateController.add(_currentState);
 
     try {
-      final bool result = await _channel.invokeMethod('startTunnel', config.toJson());
+      final Map<String, dynamic> tunnelArgs = config.toJson();
+      if (splitTunnelConfig != null) {
+        tunnelArgs.addAll(splitTunnelConfig);
+      }
+      tunnelArgs['killSwitch'] = killSwitch;
+
+      final bool result = await _channel.invokeMethod('startTunnel', tunnelArgs);
       if (result) {
         _currentState = TunnelState.connected;
       } else {
@@ -59,6 +69,31 @@ class VpnBridge {
       _stateController.add(_currentState);
       return false;
     }
+  }
+
+  Future<List<Map<String, String>>> getInstalledApps() async {
+    try {
+      final List<dynamic>? apps = await _channel.invokeMethod('getInstalledApps');
+      if (apps == null) return [];
+      return apps.map((a) => Map<String, String>.from(a as Map)).toList();
+    } catch (e) {
+      // Return sample mockup apps for Chrome web / desktop preview
+      return [
+        {'packageName': 'com.android.chrome', 'appName': 'Google Chrome'},
+        {'packageName': 'com.netflix.mediaclient', 'appName': 'Netflix'},
+        {'packageName': 'com.spotify.music', 'appName': 'Spotify'},
+        {'packageName': 'com.whatsapp', 'appName': 'WhatsApp'},
+        {'packageName': 'com.google.android.youtube', 'appName': 'YouTube'},
+        {'packageName': 'org.telegram.messenger', 'appName': 'Telegram'},
+        {'packageName': 'com.paypal.android.p2pmobile', 'appName': 'PayPal'},
+      ];
+    }
+  }
+
+  Future<void> openVpnSettings() async {
+    try {
+      await _channel.invokeMethod('openVpnSettings');
+    } catch (_) {}
   }
 
   Future<bool> stopTunnel() async {

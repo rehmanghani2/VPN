@@ -9,6 +9,10 @@ class StorageService {
   static const String _keyDevicePrivKey = 'device_priv_key';
   static const String _keyKillSwitch = 'kill_switch';
   static const String _keyAutoConnect = 'auto_connect';
+  static const String _keySplitTunnelingEnabled = 'split_tunneling_enabled';
+  static const String _keySplitTunnelingMode = 'split_tunneling_mode';
+  static const String _keySplitTunnelingApps = 'split_tunneling_apps';
+  static const String _keyBypassLocalLan = 'bypass_local_lan';
 
   final SharedPreferences _prefs;
 
@@ -58,4 +62,18 @@ class StorageService {
 
   bool get isAutoConnectEnabled => _prefs.getBool(_keyAutoConnect) ?? false;
   Future<void> setAutoConnect(bool value) async => await _prefs.setBool(_keyAutoConnect, value);
+
+  // Split Tunneling
+  bool get isSplitTunnelingEnabled => _prefs.getBool(_keySplitTunnelingEnabled) ?? false;
+  Future<void> setSplitTunneling(bool value) async => await _prefs.setBool(_keySplitTunnelingEnabled, value);
+
+  // Mode: 'bypass' (exclude apps from VPN) or 'only_vpn' (only route selected apps through VPN)
+  String get splitTunnelingMode => _prefs.getString(_keySplitTunnelingMode) ?? 'bypass';
+  Future<void> setSplitTunnelingMode(String mode) async => await _prefs.setString(_keySplitTunnelingMode, mode);
+
+  List<String> get splitTunnelingApps => _prefs.getStringList(_keySplitTunnelingApps) ?? [];
+  Future<void> setSplitTunnelingApps(List<String> apps) async => await _prefs.setStringList(_keySplitTunnelingApps, apps);
+
+  bool get isLocalLanBypassEnabled => _prefs.getBool(_keyBypassLocalLan) ?? true;
+  Future<void> setLocalLanBypass(bool value) async => await _prefs.setBool(_keyBypassLocalLan, value);
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/services/storage_service.dart';
 import '../vpn_provider.dart';
 import 'servers_screen.dart';
 import '../../settings/screens/settings_screen.dart';
@@ -211,6 +212,60 @@ class HomeScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
                 ),
               ],
+
+              const SizedBox(height: 16),
+
+              // Active Features Badges (Kill Switch & Split Tunneling)
+              Consumer<StorageService>(
+                builder: (context, storage, _) {
+                  final hasKillSwitch = storage.isKillSwitchEnabled;
+                  final hasSplit = storage.isSplitTunnelingEnabled && storage.splitTunnelingApps.isNotEmpty;
+
+                  if (!hasKillSwitch && !hasSplit) return const SizedBox.shrink();
+
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (hasKillSwitch)
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.shield_outlined, size: 14, color: AppTheme.primary),
+                              SizedBox(width: 4),
+                              Text('Kill Switch', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primary)),
+                            ],
+                          ),
+                        ),
+                      if (hasSplit)
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.connectedGreen.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppTheme.connectedGreen.withOpacity(0.3)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.alt_route_rounded, size: 14, color: AppTheme.connectedGreen),
+                              const SizedBox(width: 4),
+                              Text('Split (${storage.splitTunnelingApps.length})', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.connectedGreen)),
+                            ],
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
 
               const Spacer(),
 

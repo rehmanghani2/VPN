@@ -122,8 +122,23 @@ class VpnProvider extends ChangeNotifier {
       final tunnelData = res.data['tunnel'];
       _currentTunnel = VpnTunnel.fromJson(tunnelData);
 
-      // 2. Invoke OS tunnel bridge
-      final bool started = await _bridge.startTunnel(_currentTunnel!);
+      // 2. Invoke OS tunnel bridge with Split Tunneling & Kill Switch settings
+      Map<String, dynamic>? splitTunnelConfig;
+      if (_storage.isSplitTunnelingEnabled) {
+        splitTunnelConfig = {
+          'splitTunnelingEnabled': true,
+          'splitTunnelingMode': _storage.splitTunnelingMode,
+          'splitTunnelingApps': _storage.splitTunnelingApps,
+          'bypassLocalLan': _storage.isLocalLanBypassEnabled,
+        };
+      }
+      final bool killSwitch = _storage.isKillSwitchEnabled;
+
+      final bool started = await _bridge.startTunnel(
+        _currentTunnel!,
+        splitTunnelConfig: splitTunnelConfig,
+        killSwitch: killSwitch,
+      );
       if (!started) {
         _state = TunnelState.error;
         _errorMessage = 'Failed to establish WireGuard tunnel';
@@ -145,7 +160,20 @@ class VpnProvider extends ChangeNotifier {
           mtu: 1360,
           keepalive: 25,
         );
-        await _bridge.startTunnel(_currentTunnel!);
+        Map<String, dynamic>? splitConfig;
+        if (_storage.isSplitTunnelingEnabled) {
+          splitConfig = {
+            'splitTunnelingEnabled': true,
+            'splitTunnelingMode': _storage.splitTunnelingMode,
+            'splitTunnelingApps': _storage.splitTunnelingApps,
+            'bypassLocalLan': _storage.isLocalLanBypassEnabled,
+          };
+        }
+        await _bridge.startTunnel(
+          _currentTunnel!,
+          splitTunnelConfig: splitConfig,
+          killSwitch: _storage.isKillSwitchEnabled,
+        );
       } else {
         _state = TunnelState.error;
         _errorMessage = e.response?.data?['message']?.toString() ?? 'Connection request failed';

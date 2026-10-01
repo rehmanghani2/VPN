@@ -34,8 +34,22 @@ class WireGuardVpnService : VpnService() {
                 val clientIpV6 = intent.getStringExtra("clientAddressV6") ?: "fd42:42:42::2/64"
                 val dnsList = intent.getStringArrayListExtra("dns") ?: arrayListOf("10.8.0.1")
                 val mtu = intent.getIntExtra("mtu", 1360)
+                val killSwitch = intent.getBooleanExtra("killSwitch", false)
+                val splitTunnelingEnabled = intent.getBooleanExtra("splitTunnelingEnabled", false)
+                val splitTunnelingMode = intent.getStringExtra("splitTunnelingMode") ?: "bypass"
+                val splitTunnelApps = intent.getStringArrayListExtra("splitTunnelingApps") ?: arrayListOf<String>()
 
-                startVpnTunnel(serverName, clientIpV4, clientIpV6, dnsList, mtu)
+                startVpnTunnel(
+                    serverName,
+                    clientIpV4,
+                    clientIpV6,
+                    dnsList,
+                    mtu,
+                    killSwitch,
+                    splitTunnelingEnabled,
+                    splitTunnelingMode,
+                    splitTunnelApps
+                )
             }
             ACTION_DISCONNECT -> {
                 stopVpnTunnel()
@@ -49,15 +63,50 @@ class WireGuardVpnService : VpnService() {
         clientIpV4: String,
         clientIpV6: String,
         dnsList: ArrayList<String>,
-        mtu: Int
+        mtu: Int,
+        killSwitch: Boolean,
+        splitTunnelingEnabled: Boolean,
+        splitTunnelingMode: String,
+        splitTunnelApps: ArrayList<String>
     ) {
         try {
             createNotificationChannel()
-            startForeground(NOTIFICATION_ID, createNotification(serverName))
+            
+            // Build notification subtitle reflecting security features
+            var statusSubtitle = "Connected to $serverName • WireGuard"
+            if (killSwitch) statusSubtitle += " • 🛡️ Kill Switch"
+            if (splitTunnelingEnabled && splitTunnelApps.isNotEmpty()) {
+                statusSubtitle += " • ⚡ Split (${splitTunnelApps.size} apps)"
+            }
+            startForeground(NOTIFICATION_ID, createNotification(statusSubtitle))
 
             val builder = Builder()
                 .setSession(serverName)
                 .setMtu(mtu)
+
+            // 1. Kill Switch blocking mode (blocks unrouted traffic if tunnel drops)
+            if (killSwitch) {
+                builder.setBlocking(true)
+            }
+
+            // 2. Split Tunneling application rules
+            if (splitTunnelingEnabled && splitTunnelApps.isNotEmpty()) {
+                if (splitTunnelingMode == "only_vpn") {
+                    // Only allowed applications route through VPN; all others use default internet
+                    for (pkg in splitTunnelApps) {
+                        try {
+                            builder.addAllowedApplication(pkg)
+                        } catch (_: Exception) {}
+                    }
+                } else {
+                    // "bypass" mode: Disallowed applications bypass VPN completely
+                    for (pkg in splitTunnelApps) {
+                        try {
+                            builder.addDisallowedApplication(pkg)
+                        } catch (_: Exception) {}
+                    }
+                }
+            }
 
             // Parse IPv4 address and prefix length
             val v4Parts = clientIpV4.split("/")

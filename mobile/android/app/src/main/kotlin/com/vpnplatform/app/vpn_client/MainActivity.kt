@@ -60,6 +60,41 @@ class MainActivity : FlutterActivity() {
                     val state = if (WireGuardVpnService.isRunning) "connected" else "disconnected"
                     result.success(state)
                 }
+                "getInstalledApps" -> {
+                    try {
+                        val pm = packageManager
+                        val apps = pm.getInstalledApplications(android.content.pm.PackageManager.GET_META_DATA)
+                        val appList = mutableListOf<Map<String, String>>()
+                        for (app in apps) {
+                            val launchIntent = pm.getLaunchIntentForPackage(app.packageName)
+                            if (launchIntent != null && app.packageName != packageName) {
+                                val label = pm.getApplicationLabel(app).toString()
+                                appList.add(mapOf("packageName" to app.packageName, "appName" to label))
+                            }
+                        }
+                        appList.sortBy { it["appName"]?.lowercase() }
+                        result.success(appList)
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
+                "openVpnSettings" -> {
+                    try {
+                        val intent = Intent("android.net.vpn.SETTINGS")
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        startActivity(intent)
+                        result.success(true)
+                    } catch (_: Exception) {
+                        try {
+                            val fallback = Intent(android.provider.Settings.ACTION_WIRELESS_SETTINGS)
+                            fallback.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            startActivity(fallback)
+                            result.success(true)
+                        } catch (e2: Exception) {
+                            result.error("ERROR", "Cannot open VPN settings: ${e2.message}", null)
+                        }
+                    }
+                }
                 else -> {
                     result.notImplemented()
                 }
@@ -74,6 +109,14 @@ class MainActivity : FlutterActivity() {
             putExtra("clientAddressV4", args["clientAddressV4"] as? String ?: "10.8.0.2/24")
             putExtra("clientAddressV6", args["clientAddressV6"] as? String ?: "fd42:42:42::2/64")
             putExtra("mtu", args["mtu"] as? Int ?: 1360)
+            putExtra("killSwitch", args["killSwitch"] as? Boolean ?: false)
+            putExtra("splitTunnelingEnabled", args["splitTunnelingEnabled"] as? Boolean ?: false)
+            putExtra("splitTunnelingMode", args["splitTunnelingMode"] as? String ?: "bypass")
+
+            val splitAppsRaw = args["splitTunnelingApps"] as? List<*>
+            val splitAppsList = ArrayList<String>()
+            splitAppsRaw?.forEach { if (it is String) splitAppsList.add(it) }
+            putStringArrayListExtra("splitTunnelingApps", splitAppsList)
 
             val dnsRaw = args["dns"] as? List<*>
             val dnsList = ArrayList<String>()

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/services/storage_service.dart';
+import '../../../core/services/vpn_bridge.dart';
 import '../../auth/auth_provider.dart';
 import '../../auth/screens/login_screen.dart';
+import 'split_tunneling_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -173,6 +175,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onChanged: (val) {
                     setState(() => _killSwitch = val);
                     storage.setKillSwitch(val);
+                  },
+                ),
+                if (_killSwitch)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.primary,
+                          side: BorderSide(color: AppTheme.primary.withOpacity(0.5)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: const Icon(Icons.security, size: 16),
+                        label: const Text('Configure Android System Always-on VPN', style: TextStyle(fontSize: 12)),
+                        onPressed: () => context.read<VpnBridge>().openVpnSettings(),
+                      ),
+                    ),
+                  ),
+                const Divider(height: 1, color: AppTheme.surfaceLight),
+                ListTile(
+                  title: const Text(
+                    'Split Tunneling',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                  subtitle: Text(
+                    storage.isSplitTunnelingEnabled
+                        ? '${storage.splitTunnelingApps.length} apps configured (${storage.splitTunnelingMode == 'bypass' ? 'Bypassing' : 'Exclusive'})'
+                        : 'Choose apps that bypass or exclusively use the VPN',
+                    style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: storage.isSplitTunnelingEnabled
+                              ? AppTheme.primary.withOpacity(0.2)
+                              : AppTheme.surfaceLight,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          storage.isSplitTunnelingEnabled ? 'ON' : 'OFF',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: storage.isSplitTunnelingEnabled
+                                ? AppTheme.primary
+                                : AppTheme.textSecondary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+                    ],
+                  ),
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SplitTunnelingScreen()),
+                    );
+                    setState(() {});
                   },
                 ),
                 const Divider(height: 1, color: AppTheme.surfaceLight),

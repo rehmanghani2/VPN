@@ -98,6 +98,34 @@ void ExecuteTunnelService(const std::wstring& cmd, const std::wstring& params) {
     }
 }
 
+void SetWindowsKillSwitch(bool enable, const std::string& endpoint = "") {
+    if (enable) {
+        std::string ip = endpoint;
+        size_t colon = endpoint.find(':');
+        if (colon != std::string::npos) {
+            ip = endpoint.substr(0, colon);
+        }
+
+        // 1. Allow WireGuard tunnel endpoint UDP traffic
+        std::wstring allowEndpointCmd = L"advfirewall firewall add rule name=\"AntigravityAllowEndpoint\" dir=out action=allow protocol=UDP remoteip=" +
+            std::wstring(ip.begin(), ip.end());
+        ExecuteTunnelService(L"netsh.exe", allowEndpointCmd);
+
+        // 2. Allow Loopback and DHCP
+        ExecuteTunnelService(L"netsh.exe", L"advfirewall firewall add rule name=\"AntigravityAllowDHCP\" dir=out action=allow protocol=UDP localport=68 remoteport=67");
+        ExecuteTunnelService(L"netsh.exe", L"advfirewall firewall add rule name=\"AntigravityAllowLoopback\" dir=out action=allow remoteip=127.0.0.1");
+
+        // 3. Block unencrypted outbound leak
+        ExecuteTunnelService(L"netsh.exe", L"advfirewall firewall add rule name=\"AntigravityKillSwitchBlock\" dir=out action=block");
+    } else {
+        // Tear down kill switch rules cleanly
+        ExecuteTunnelService(L"netsh.exe", L"advfirewall firewall delete rule name=\"AntigravityKillSwitchBlock\"");
+        ExecuteTunnelService(L"netsh.exe", L"advfirewall firewall delete rule name=\"AntigravityAllowEndpoint\"");
+        ExecuteTunnelService(L"netsh.exe", L"advfirewall firewall delete rule name=\"AntigravityAllowDHCP\"");
+        ExecuteTunnelService(L"netsh.exe", L"advfirewall firewall delete rule name=\"AntigravityAllowLoopback\"");
+    }
+}
+
 } // namespace
 
 void RegisterVpnChannel(flutter::BinaryMessenger* messenger) {
@@ -126,6 +154,23 @@ void RegisterVpnChannel(flutter::BinaryMessenger* messenger) {
                     return;
                 }
 
+                // Check Kill Switch parameter
+                bool killSwitch = false;
+                auto ksIt = args->find(flutter::EncodableValue("killSwitch"));
+                if (ksIt != args->end() && std::holds_alternative<bool>(ksIt->second)) {
+                    killSwitch = std::get<bool>(ksIt->second);
+                }
+
+                std::string endpoint = "127.0.0.1:51820";
+                auto epIt = args->find(flutter::EncodableValue("endpoint"));
+                if (epIt != args->end() && std::holds_alternative<std::string>(epIt->second)) {
+                    endpoint = std::get<std::string>(epIt->second);
+                }
+
+                if (killSwitch) {
+                    SetWindowsKillSwitch(true, endpoint);
+                }
+
                 std::wstring wgExe = FindWireGuardExecutable();
                 if (!wgExe.empty()) {
                     // Install and start tunnel service with Wintun
@@ -146,6 +191,9 @@ void RegisterVpnChannel(flutter::BinaryMessenger* messenger) {
                 result->Success(flutter::EncodableValue(true));
             }
             else if (method == "stopTunnel") {
+                // Remove Windows Kill Switch firewall rules
+                SetWindowsKillSwitch(false);
+
                 std::wstring wgExe = FindWireGuardExecutable();
                 if (!wgExe.empty()) {
                     std::wstring params = L"/uninstalltunnelservice AntigravityTunnel";
@@ -167,6 +215,28 @@ void RegisterVpnChannel(flutter::BinaryMessenger* messenger) {
             else if (method == "getTunnelState") {
                 std::string state = g_is_connected ? "connected" : "disconnected";
                 result->Success(flutter::EncodableValue(state));
+            }
+            else if (method == "getInstalledApps") {
+                flutter::EncodableList appList;
+                const std::vector<std::pair<std::string, std::string>> knownApps = {
+                    {"Google Chrome", "chrome.exe"},
+                    {"Mozilla Firefox", "firefox.exe"},
+                    {"Microsoft Edge", "msedge.exe"},
+                    {"Spotify Music", "spotify.exe"},
+                    {"Steam Client", "steam.exe"},
+                    {"Discord", "discord.exe"},
+                    {"Telegram Desktop", "telegram.exe"},
+                    {"Visual Studio Code", "code.exe"}
+                };
+
+                for (const auto& app : knownApps) {
+                    flutter::EncodableMap item;
+                    item[flutter::EncodableValue("appName")] = flutter::EncodableValue(app.first);
+                    item[flutter::EncodableValue("packageName")] = flutter::EncodableValue(app.second);
+                    appList.push_back(flutter::EncodableValue(item));
+                }
+
+                result->Success(flutter::EncodableValue(appList));
             }
             else {
                 result->NotImplemented();
