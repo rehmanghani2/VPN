@@ -6,6 +6,7 @@ import NetworkExtension
 @objc class AppDelegate: FlutterAppDelegate {
 
   private let channelName = "com.vpnplatform.app/vpn"
+  private let appGroupIdentifier = "group.com.antigravity.vpn"
   private var vpnChannel: FlutterMethodChannel?
   private var vpnManager: NETunnelProviderManager?
 
@@ -44,12 +45,32 @@ import NetworkExtension
         let state = self.currentTunnelStateString()
         result(state)
 
+      case "getTunnelStatistics":
+        let sharedDefaults = UserDefaults(suiteName: self.appGroupIdentifier)
+        let bytesIn = sharedDefaults?.integer(forKey: "bytesIn") ?? 0
+        let bytesOut = sharedDefaults?.integer(forKey: "bytesOut") ?? 0
+        let lastHandshake = sharedDefaults?.double(forKey: "lastHandshake") ?? 0
+        let isConnected = (self.currentTunnelStateString() == "connected")
+
+        result([
+          "bytesIn": bytesIn,
+          "bytesOut": bytesOut,
+          "lastHandshake": Int(lastHandshake * 1000), // in milliseconds
+          "isConnected": isConnected
+        ])
+
+      case "openVpnSettings":
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+          UIApplication.shared.open(url, options: [:], completionHandler: nil)
+        }
+        result(true)
+
       default:
         result(FlutterMethodNotImplemented)
       }
     }
 
-    // Observe tunnel status notifications
+    // Observe tunnel status notifications from iOS system
     NotificationCenter.default.addObserver(
       self,
       selector: #selector(tunnelStatusDidChange(_:)),
@@ -81,13 +102,16 @@ import NetworkExtension
       let serverName = args["serverName"] as? String ?? "VPN Server"
       let endpoint = args["endpoint"] as? String ?? "127.0.0.1:51820"
 
+      var modifiedArgs = args
+      modifiedArgs["killSwitchEnabled"] = args["killSwitch"] as? Bool ?? false
+
       let protocolConfig = NETunnelProviderProtocol()
       protocolConfig.providerBundleIdentifier = "com.vpnplatform.app.vpn-client.network-extension"
       protocolConfig.serverAddress = endpoint
-      protocolConfig.providerConfiguration = args
+      protocolConfig.providerConfiguration = modifiedArgs
 
       manager.protocolConfiguration = protocolConfig
-      manager.localizedDescription = "Antigravity VPN ($serverName)"
+      manager.localizedDescription = "Antigravity VPN (\(serverName))"
       manager.isEnabled = true
 
       manager.saveToPreferences { error in
