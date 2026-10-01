@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { DevicesModule } from './devices/devices.module';
 import { VpnModule } from './vpn/vpn.module';
 import { BillingModule } from './billing/billing.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { BillingModule } from './billing/billing.module';
     DevicesModule,
     VpnModule,
     BillingModule,
+    AdminModule,
   ],
 })
 export class AppModule {}
