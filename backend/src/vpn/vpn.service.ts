@@ -3,12 +3,15 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConnectVpnDto, DisconnectVpnDto } from './dto/connect.dto';
 
 @Injectable()
 export class VpnService {
+  private readonly logger = new Logger(VpnService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async listServers() {
@@ -137,7 +140,13 @@ export class VpnService {
       data: { lastSeenAt: new Date() },
     });
 
-    // 5. Construct WireGuard Client Configuration Payload
+    // 5. Real-Time Dynamic Sync with Linux WireGuard Edge Node
+    await this.syncPeerToNode(server.publicIp, 'add', {
+      publicKey: device.publicKey,
+      allowedIps: [`${peer.allocatedIpV4}/32`, `${peer.allocatedIpV6}/128`],
+    });
+
+    // 6. Construct WireGuard Client Configuration Payload
     return {
       tunnel: {
         serverName: server.name,
@@ -173,6 +182,7 @@ export class VpnService {
 
     const activePeers = await this.prisma.vpnPeer.findMany({
       where: whereClause,
+      include: { server: true },
     });
 
     for (const peer of activePeers) {
@@ -185,8 +195,55 @@ export class VpnService {
         where: { id: peer.serverId },
         data: { currentLoad: { decrement: 1 } },
       });
+
+      // Synchronize removal to Linux edge node
+      if (peer.server?.publicIp) {
+        await this.syncPeerToNode(peer.server.publicIp, 'remove', {
+          publicKey: peer.clientPublicKey,
+        });
+      }
     }
 
     return { message: 'Disconnected successfully' };
+  }
+
+  /**
+   * Synchronize WireGuard peer state with remote Linux edge daemon
+   */
+  private async syncPeerToNode(serverIp: string, action: 'add' | 'remove', payload: any) {
+    // If testing locally or against mock IPs (198.51.100.x), skip actual network dispatch
+    if (!serverIp || serverIp.startsWith('198.51.100.') || serverIp === '127.0.0.1') {
+      this.logger.debug(`[NodeAgent] Mock/local IP (${serverIp}): simulated ${action} peer`);
+      return;
+    }
+
+    try {
+      const agentPort = process.env.AGENT_PORT || 51821;
+      const agentUrl = `http://${serverIp}:${agentPort}/peers/${action}`;
+      const token = process.env.NODE_AGENT_TOKEN || 'vpn-node-agent-secure-token-2026';
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+      const res = await fetch(agentUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Node-Token': token,
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        this.logger.log(`[NodeAgent] Live synchronized peer ${action} to ${serverIp}`);
+      } else {
+        this.logger.warn(`[NodeAgent] Remote node ${serverIp} returned status ${res.status}`);
+      }
+    } catch (err: any) {
+      this.logger.warn(`[NodeAgent] Edge node ${serverIp} unreachable (${err.message}). Database peer state retained.`);
+    }
   }
 }

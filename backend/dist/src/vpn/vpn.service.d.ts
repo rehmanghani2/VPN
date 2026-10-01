@@ -2,15 +2,16 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ConnectVpnDto, DisconnectVpnDto } from './dto/connect.dto';
 export declare class VpnService {
     private readonly prisma;
+    private readonly logger;
     constructor(prisma: PrismaService);
     listServers(): Promise<{
         id: string;
-        status: string;
         name: string;
         countryCode: string;
         countryName: string;
         city: string;
         hostname: string;
+        status: string;
         capacity: number;
         currentLoad: number;
     }[]>;
@@ -34,4 +35,5 @@ export declare class VpnService {
     disconnect(userId: string, dto: DisconnectVpnDto): Promise<{
         message: string;
     }>;
+    private syncPeerToNode;
 }

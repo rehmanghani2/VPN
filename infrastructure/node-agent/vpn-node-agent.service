@@ -1,0 +1,26 @@
+[Unit]
+Description=Antigravity VPN Edge Node Agent & Dynamic WireGuard Synchronizer
+After=network.target wg-quick@wg0.service
+Wants=wg-quick@wg0.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/vpn-node-agent
+ExecStart=/usr/bin/node /opt/vpn-node-agent/agent.js
+Restart=always
+RestartSec=5
+
+# Environment Configuration
+Environment=AGENT_PORT=51821
+Environment=WG_INTERFACE=wg0
+Environment=WG_CONF_PATH=/etc/wireguard/wg0.conf
+Environment=NODE_AGENT_TOKEN=vpn-node-agent-secure-token-2026
+
+# Security hardening
+LimitNOFILE=65536
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

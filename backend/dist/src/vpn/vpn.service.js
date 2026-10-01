@@ -8,13 +8,15 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var VpnService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VpnService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
-let VpnService = class VpnService {
+let VpnService = VpnService_1 = class VpnService {
     constructor(prisma) {
         this.prisma = prisma;
+        this.logger = new common_1.Logger(VpnService_1.name);
     }
     async listServers() {
         return this.prisma.vpnServer.findMany({
@@ -118,6 +120,10 @@ let VpnService = class VpnService {
             where: { id: device.id },
             data: { lastSeenAt: new Date() },
         });
+        await this.syncPeerToNode(server.publicIp, 'add', {
+            publicKey: device.publicKey,
+            allowedIps: [`${peer.allocatedIpV4}/32`, `${peer.allocatedIpV6}/128`],
+        });
         return {
             tunnel: {
                 serverName: server.name,
@@ -149,6 +155,7 @@ let VpnService = class VpnService {
         }
         const activePeers = await this.prisma.vpnPeer.findMany({
             where: whereClause,
+            include: { server: true },
         });
         for (const peer of activePeers) {
             await this.prisma.vpnPeer.update({
@@ -159,12 +166,49 @@ let VpnService = class VpnService {
                 where: { id: peer.serverId },
                 data: { currentLoad: { decrement: 1 } },
             });
+            if (peer.server?.publicIp) {
+                await this.syncPeerToNode(peer.server.publicIp, 'remove', {
+                    publicKey: peer.clientPublicKey,
+                });
+            }
         }
         return { message: 'Disconnected successfully' };
     }
+    async syncPeerToNode(serverIp, action, payload) {
+        if (!serverIp || serverIp.startsWith('198.51.100.') || serverIp === '127.0.0.1') {
+            this.logger.debug(`[NodeAgent] Mock/local IP (${serverIp}): simulated ${action} peer`);
+            return;
+        }
+        try {
+            const agentPort = process.env.AGENT_PORT || 51821;
+            const agentUrl = `http://${serverIp}:${agentPort}/peers/${action}`;
+            const token = process.env.NODE_AGENT_TOKEN || 'vpn-node-agent-secure-token-2026';
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2500);
+            const res = await fetch(agentUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Node-Token': token,
+                },
+                body: JSON.stringify(payload),
+                signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+            if (res.ok) {
+                this.logger.log(`[NodeAgent] Live synchronized peer ${action} to ${serverIp}`);
+            }
+            else {
+                this.logger.warn(`[NodeAgent] Remote node ${serverIp} returned status ${res.status}`);
+            }
+        }
+        catch (err) {
+            this.logger.warn(`[NodeAgent] Edge node ${serverIp} unreachable (${err.message}). Database peer state retained.`);
+        }
+    }
 };
 exports.VpnService = VpnService;
-exports.VpnService = VpnService = __decorate([
+exports.VpnService = VpnService = VpnService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], VpnService);

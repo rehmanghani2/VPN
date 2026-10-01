@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.vpnplatform.app.vpn_client"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 34
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -21,9 +21,13 @@ android {
     defaultConfig {
         applicationId = "com.vpnplatform.app.vpn_client"
         minSdk = 26
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        ndk {
+            abiFilters.add("armeabi-v7a")
+        }
     }
 
     buildTypes {
