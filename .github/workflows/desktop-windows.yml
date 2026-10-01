@@ -1,0 +1,53 @@
+name: Windows Desktop Release Packaging
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    name: Build Windows Release & Installer
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Enable Windows Desktop Support
+        run: flutter config --enable-windows-desktop
+
+      - name: Install Dependencies
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Build Windows Release
+        working-directory: mobile
+        run: flutter build windows --release
+
+      - name: Download Signed Wintun Driver
+        run: |
+          Invoke-WebRequest -Uri "https://www.wintun.net/builds/wintun-0.14.1.zip" -OutFile "wintun.zip"
+          Expand-Archive -Path "wintun.zip" -DestinationPath "wintun_extracted"
+          Copy-Item -Path "wintun_extracted/wintun/bin/amd64/wintun.dll" -Destination "mobile/build/windows/x64/runner/Release/"
+
+      - name: Compile InnoSetup Installer
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        with:
+          path: mobile/windows/installer/vpn_setup.iss
+
+      - name: Upload Windows Setup Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: mobile/windows/installer/Output/*.exe

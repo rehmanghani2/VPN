@@ -1,0 +1,51 @@
+name: Backend Control Plane Docker CI/CD
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-backend:
+    name: Build & Test Backend Container
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Generate Prisma Client
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Run Unit Tests & Build
+        working-directory: backend
+        run: |
+          npm run build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Production Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: backend
+          file: backend/Dockerfile
+          push: false
+          tags: vpn-control-plane:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
