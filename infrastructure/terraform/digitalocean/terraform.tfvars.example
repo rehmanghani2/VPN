@@ -1,0 +1,13 @@
+# ==============================================================================
+# DigitalOcean Multi-Region VPN - Credentials Example (terraform.tfvars.example)
+# Rename to 'terraform.tfvars' and insert your personal access token
+# ==============================================================================
+
+# 1. DigitalOcean Personal Access Token (from https://cloud.digitalocean.com/account/api/tokens)
+do_token = "dop_v1_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# 2. Public SSH Key (Run 'cat ~/.ssh/id_rsa.pub' or 'type $env:USERPROFILE\.ssh\id_rsa.pub')
+ssh_public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... user@machine"
+
+# 3. Central NestJS Control Plane URL
+backend_api_url = "http://YOUR_CENTRAL_IP:3000/api/v1"
