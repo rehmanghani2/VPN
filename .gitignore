@@ -2,15 +2,51 @@
 # Commercial VPN Platform - Root .gitignore
 # ==========================================
 
-# --- Environment & Secret Keys ---
-.env
-.env.local
-.env.production
-.env.staging
-*.key
-*.psk
-*.priv
-*.pem
+# --- Environment & Secret Keys (Zero-Exposure) ---
+**/.env
+**/.env.local
+**/.env.production
+**/.env.staging
+**/.env.*
+!**/.env.example
+
+# Private Keys, Certificates & Tokens
+**/*.key
+**/*.psk
+**/*.priv
+**/*.pem
+**/*.p8
+**/*.p12
+**/*.cer
+**/*.crt
+**/*.mobileprovision
+**/*.keystore
+**/*.jks
+
+# Cloud, Mobile & Payment Credentials
+**/secrets/
+**/*service-account*.json
+**/google-play*.json
+**/apple-store*.p8
+**/stripe-secret*
+
+# Terraform State & Secrets
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.*
+**/*.tfvars
+!**/*.tfvars.example
+
+# Local SQLite & Databases
+**/*.db
+**/*.db-journal
+**/*.sqlite
+**/*.sqlite3
+
+# Next.js Admin Dashboard Builds
+admin-dashboard/.next/
+admin-dashboard/out/
+
 /root/wireguard-clients/
 
 # --- Operating Systems ---

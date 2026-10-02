@@ -1,7 +1,10 @@
 class ApiConstants {
-  // Point this to your backend server IP/domain in production
-  // Local backend URL for Web & Desktop
-  static const String baseUrl = 'http://127.0.0.1:3000/api/v1';
+  // Configurable via --dart-define=API_BASE_URL=https://api.yourdomain.com/api/v1
+  // Defaults to localhost for Web & Desktop development
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://127.0.0.1:3000/api/v1',
+  );
 
   // Auth Endpoints
   static const String register = '/auth/register';
