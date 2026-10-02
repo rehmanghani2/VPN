@@ -104,4 +104,13 @@ class StorageService {
     return str != null ? DateTime.tryParse(str) : null;
   }
   Future<void> setLastKeyRotatedAt(DateTime dt) async => await _prefs.setString(_keyLastKeyRotatedAt, dt.toIso8601String());
+
+  // Phase 16: Smart Quality Prober & Auto-Failover
+  static const String _keyAutoFailover = 'auto_failover';
+  bool get isAutoFailoverEnabled => _prefs.getBool(_keyAutoFailover) ?? true;
+  Future<void> setAutoFailover(bool value) async => await _prefs.setBool(_keyAutoFailover, value);
+
+  static const String _keyFailoverLatencyThreshold = 'failover_latency_threshold';
+  int get failoverLatencyThresholdMs => _prefs.getInt(_keyFailoverLatencyThreshold) ?? 220; // 220ms threshold
+  Future<void> setFailoverLatencyThreshold(int ms) async => await _prefs.setInt(_keyFailoverLatencyThreshold, ms);
 }

@@ -375,6 +375,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
                 const Divider(height: 1, color: AppTheme.surfaceLight),
+                SwitchListTile(
+                  title: const Text(
+                    'Smart Auto-Failover',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                  subtitle: const Text(
+                    'Automatically migrates to next lowest-latency server if tunnel drops or spikes > 220ms.',
+                    style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  ),
+                  activeColor: AppTheme.connectedGreen,
+                  value: storage.isAutoFailoverEnabled,
+                  onChanged: (val) {
+                    storage.setAutoFailover(val);
+                    setState(() {});
+                  },
+                ),
+                const Divider(height: 1, color: AppTheme.surfaceLight),
                 ListTile(
                   title: const Text(
                     'VPN Protocol',

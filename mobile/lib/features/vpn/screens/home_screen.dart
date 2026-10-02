@@ -90,16 +90,20 @@ class HomeScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isConnected
                       ? AppTheme.connectedGreen.withOpacity(0.15)
-                      : isConnecting
-                          ? AppTheme.primary.withOpacity(0.15)
-                          : AppTheme.surfaceLight.withOpacity(0.3),
+                      : vpn.isReconnecting
+                          ? AppTheme.warningYellow.withOpacity(0.15)
+                          : isConnecting
+                              ? AppTheme.primary.withOpacity(0.15)
+                              : AppTheme.surfaceLight.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isConnected
                         ? AppTheme.connectedGreen.withOpacity(0.4)
-                        : isConnecting
-                            ? AppTheme.primary.withOpacity(0.4)
-                            : Colors.transparent,
+                        : vpn.isReconnecting
+                            ? AppTheme.warningYellow.withOpacity(0.4)
+                            : isConnecting
+                                ? AppTheme.primary.withOpacity(0.4)
+                                : Colors.transparent,
                   ),
                 ),
                 child: Row(
@@ -112,27 +116,33 @@ class HomeScreen extends StatelessWidget {
                         shape: BoxShape.circle,
                         color: isConnected
                             ? AppTheme.connectedGreen
-                            : isConnecting
-                                ? AppTheme.primary
-                                : AppTheme.disconnectedRed,
+                            : vpn.isReconnecting
+                                ? AppTheme.warningYellow
+                                : isConnecting
+                                    ? AppTheme.primary
+                                    : AppTheme.disconnectedRed,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       isConnected
                           ? 'PROTECTED & ENCRYPTED'
-                          : isConnecting
-                              ? 'SECURING CONNECTION...'
-                              : 'UNPROTECTED',
+                          : vpn.isReconnecting
+                              ? 'AUTO-FAILOVER RECONNECTING...'
+                              : isConnecting
+                                  ? 'SECURING CONNECTION...'
+                                  : 'UNPROTECTED',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.2,
                         color: isConnected
                             ? AppTheme.connectedGreen
-                            : isConnecting
-                                ? AppTheme.primary
-                                : AppTheme.textSecondary,
+                            : vpn.isReconnecting
+                                ? AppTheme.warningYellow
+                                : isConnecting
+                                    ? AppTheme.primary
+                                    : AppTheme.textSecondary,
                       ),
                     ),
                   ],

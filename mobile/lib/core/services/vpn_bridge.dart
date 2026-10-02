@@ -6,6 +6,7 @@ enum TunnelState {
   disconnected,
   connecting,
   connected,
+  reconnecting,
   disconnecting,
   error,
 }
@@ -174,6 +175,8 @@ class VpnBridge {
     switch (state.toLowerCase()) {
       case 'connecting':
         return TunnelState.connecting;
+      case 'reconnecting':
+        return TunnelState.reconnecting;
       case 'connected':
         return TunnelState.connected;
       case 'disconnecting':

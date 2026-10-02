@@ -48,9 +48,20 @@ class VpnProvider extends ChangeNotifier {
   TunnelState get state => _state;
   bool get isConnected => _state == TunnelState.connected;
   bool get isConnecting => _state == TunnelState.connecting;
+  bool get isReconnecting => _state == TunnelState.reconnecting;
   Duration get connectedDuration => _connectedDuration;
   String? get errorMessage => _errorMessage;
   VpnStatistics get statistics => _statistics;
+
+  // Phase 16: Smart Quality Prober & Auto-Failover State
+  int _consecutiveHighLatencyCount = 0;
+  bool _isFailingOver = false;
+  String? _lastFailoverReason;
+  DateTime? _lastFailoverTime;
+
+  bool get isFailingOver => _isFailingOver;
+  String? get lastFailoverReason => _lastFailoverReason;
+  DateTime? get lastFailoverTime => _lastFailoverTime;
 
   void selectServer(VpnServer? server) {
     _selectedServer = server;
@@ -341,8 +352,90 @@ class VpnProvider extends ChangeNotifier {
         txHistory: List.unmodifiable(_txHistory),
       );
 
+      // Phase 16: Continuous Quality Assessment & Auto-Failover Probing
+      if (_storage.isAutoFailoverEnabled && !_isFailingOver && _connectedDuration.inSeconds > 10) {
+        final thresholdMs = _storage.failoverLatencyThresholdMs;
+        if (ping > thresholdMs || (lastHandshake > 20 && _connectedDuration.inSeconds > 30)) {
+          _consecutiveHighLatencyCount++;
+          _bridge.addLog(
+            'WARN',
+            'Tunnel quality degraded ($ping ms latency, streak: $_consecutiveHighLatencyCount/3)',
+            meta: {'ping': ping, 'threshold': thresholdMs, 'streak': _consecutiveHighLatencyCount},
+          );
+
+          if (_consecutiveHighLatencyCount >= 3) {
+            _consecutiveHighLatencyCount = 0;
+            triggerFailoverMigration('Persistent latency spike ($ping ms > $thresholdMs ms)');
+          }
+        } else {
+          if (_consecutiveHighLatencyCount > 0) {
+            _consecutiveHighLatencyCount = 0;
+          }
+        }
+      }
+
       notifyListeners();
     });
+  }
+
+  /// Phase 16: Seamless Auto-Failover Migration to next optimal server
+  Future<void> triggerFailoverMigration(String reason) async {
+    if (_isFailingOver) return;
+    _isFailingOver = true;
+    _lastFailoverReason = reason;
+    _lastFailoverTime = DateTime.now();
+
+    _bridge.addLog(
+      'WARN',
+      'TRIGGERING AUTO-FAILOVER: $reason. Migrating tunnel seamlessly to optimal backup server...',
+      meta: {'currentServer': _currentTunnel?.serverName, 'reason': reason},
+    );
+
+    _state = TunnelState.reconnecting;
+    notifyListeners();
+
+    try {
+      // 1. Refresh global servers catalog to detect current load and online status
+      await fetchServers();
+
+      // 2. Select next lowest load server different from current
+      final currentServerName = _currentTunnel?.serverName;
+      final availableServers = _servers
+          .where((s) => s.status == 'ONLINE' && s.name != currentServerName)
+          .toList()
+        ..sort((a, b) => a.currentLoad.compareTo(b.currentLoad));
+
+      if (availableServers.isEmpty) {
+        _bridge.addLog('ERROR', 'Auto-failover aborted: no alternative online server available');
+        _state = TunnelState.connected;
+        _isFailingOver = false;
+        notifyListeners();
+        return;
+      }
+
+      final targetFailoverServer = availableServers.first;
+      _bridge.addLog(
+        'INFO',
+        'Auto-failover selected target server: ${targetFailoverServer.name} (${targetFailoverServer.city}, Load: ${targetFailoverServer.currentLoad})',
+      );
+
+      _selectedServer = targetFailoverServer;
+
+      // 3. Fast-connect without tearing down UI
+      await connect();
+
+      _bridge.addLog(
+        'SUCCESS',
+        'AUTO-FAILOVER COMPLETED: Successfully migrated to ${targetFailoverServer.name}',
+        meta: {'newServer': targetFailoverServer.name, 'reason': reason},
+      );
+    } catch (e) {
+      _bridge.addLog('ERROR', 'Auto-failover migration failed: $e');
+      _state = TunnelState.error;
+    } finally {
+      _isFailingOver = false;
+      notifyListeners();
+    }
   }
 
   void _stopTelemetry() {
