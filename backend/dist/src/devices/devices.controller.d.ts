@@ -12,25 +12,25 @@ export declare class DevicesController {
         isConnected: boolean;
         activeSession: {
             id: string;
-            serverId: string;
             status: string;
             updatedAt: Date;
+            serverId: string;
+            allocatedIpV4: string;
             server: {
                 name: string;
                 countryCode: string;
                 city: string;
                 isObfuscated: boolean;
             };
-            allocatedIpV4: string;
         };
     }[]>;
     register(userId: string, dto: RegisterDeviceDto): Promise<{
         id: string;
-        userId: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
+        userId: string;
         deviceIdentifier: string;
-        name: string;
         platform: string;
         publicKey: string;
         lastSeenAt: Date;

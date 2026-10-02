@@ -4,6 +4,7 @@ import '../../../core/theme/app_theme.dart';
 import '../vpn_provider.dart';
 import '../../auth/auth_provider.dart';
 import '../../billing/screens/subscription_screen.dart';
+import '../../multihop/screens/multihop_screen.dart';
 
 class ServersScreen extends StatefulWidget {
   const ServersScreen({super.key});
@@ -142,6 +143,38 @@ class _ServersScreenState extends State<ServersScreen> {
                 _buildFilterChip('STANDARD', 'Standard WireGuard'),
                 const SizedBox(width: 8),
                 _buildFilterChip('STEALTH', '🥷 Stealth / Anti-DPI (Port 443)'),
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const MultiHopScreen()),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accent.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppTheme.accent.withOpacity(0.5)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.hub_rounded, size: 14, color: AppTheme.accent),
+                        SizedBox(width: 6),
+                        Text(
+                          'Double VPN & Onion',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.accent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

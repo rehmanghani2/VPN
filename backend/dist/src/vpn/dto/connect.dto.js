@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DisconnectVpnDto = exports.ConnectVpnDto = void 0;
+exports.DisconnectVpnDto = exports.RotateKeyDto = exports.ConnectVpnDto = void 0;
 const class_validator_1 = require("class-validator");
 class ConnectVpnDto {
 }
@@ -34,6 +34,27 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], ConnectVpnDto.prototype, "threatShieldLevel", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], ConnectVpnDto.prototype, "enablePostQuantum", void 0);
+class RotateKeyDto {
+}
+exports.RotateKeyDto = RotateKeyDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Device ID is required' }),
+    __metadata("design:type", String)
+], RotateKeyDto.prototype, "deviceId", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'New public key is required' }),
+    __metadata("design:type", String)
+], RotateKeyDto.prototype, "newPublicKey", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], RotateKeyDto.prototype, "enablePostQuantum", void 0);
 class DisconnectVpnDto {
 }
 exports.DisconnectVpnDto = DisconnectVpnDto;

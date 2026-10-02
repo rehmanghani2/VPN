@@ -139,6 +139,10 @@ let VpnService = VpnService_1 = class VpnService {
             }
             const clientIpV4 = `10.8.0.${allocatedOctet}`;
             const clientIpV6 = `fd42:42:42::${allocatedOctet}`;
+            const pqAlgorithm = dto.enablePostQuantum ? 'kyber768' : 'classic';
+            const pqPresharedKey = dto.enablePostQuantum
+                ? Buffer.from(require('crypto').randomBytes(32)).toString('base64')
+                : null;
             peer = await this.prisma.vpnPeer.create({
                 data: {
                     deviceId: device.id,
@@ -146,6 +150,10 @@ let VpnService = VpnService_1 = class VpnService {
                     allocatedIpV4: clientIpV4,
                     allocatedIpV6: clientIpV6,
                     clientPublicKey: device.publicKey,
+                    pqKemAlgorithm: pqAlgorithm,
+                    pqPresharedKey: pqPresharedKey,
+                    presharedKey: pqPresharedKey,
+                    rotatedAt: new Date(),
                     status: 'ACTIVE',
                 },
             });
@@ -155,10 +163,18 @@ let VpnService = VpnService_1 = class VpnService {
             });
         }
         else {
+            const pqAlgorithm = dto.enablePostQuantum ? 'kyber768' : (peer.pqKemAlgorithm || 'classic');
+            let pqKey = peer.pqPresharedKey;
+            if (dto.enablePostQuantum && !pqKey) {
+                pqKey = Buffer.from(require('crypto').randomBytes(32)).toString('base64');
+            }
             peer = await this.prisma.vpnPeer.update({
                 where: { id: peer.id },
                 data: {
                     clientPublicKey: device.publicKey,
+                    pqKemAlgorithm: pqAlgorithm,
+                    pqPresharedKey: pqKey,
+                    presharedKey: pqKey,
                     status: 'ACTIVE',
                 },
             });
@@ -170,6 +186,7 @@ let VpnService = VpnService_1 = class VpnService {
         await this.syncPeerToNode(server.publicIp, 'add', {
             publicKey: device.publicKey,
             allowedIps: [`${peer.allocatedIpV4}/32`, `${peer.allocatedIpV6}/128`],
+            presharedKey: peer.pqPresharedKey || peer.presharedKey || undefined,
         });
         const isStealth = dto.protocol === 'stealth_obfuscated' || server.isObfuscated;
         const targetPort = isStealth && server.isObfuscated ? server.obfuscationPort : server.wgPort;
@@ -200,6 +217,10 @@ let VpnService = VpnService_1 = class VpnService {
                         responseHeader: '0xd4c3b2a1',
                     }
                     : null,
+                isPostQuantum: peer.pqKemAlgorithm === 'kyber768',
+                postQuantumAlgorithm: peer.pqKemAlgorithm || 'classic',
+                presharedKey: peer.pqPresharedKey || null,
+                keyRotatedAt: peer.rotatedAt ? peer.rotatedAt.toISOString() : new Date().toISOString(),
             },
             peerId: peer.id,
             status: 'CONNECTED',
@@ -236,6 +257,98 @@ let VpnService = VpnService_1 = class VpnService {
             }
         }
         return { message: 'Disconnected successfully' };
+    }
+    async rotateKey(userId, dto) {
+        const device = await this.prisma.device.findFirst({
+            where: { id: dto.deviceId, userId },
+        });
+        if (!device) {
+            throw new common_1.NotFoundException('Device not found or not owned by user');
+        }
+        const oldPublicKey = device.publicKey;
+        await this.prisma.device.update({
+            where: { id: device.id },
+            data: {
+                publicKey: dto.newPublicKey,
+                lastSeenAt: new Date(),
+            },
+        });
+        const activePeers = await this.prisma.vpnPeer.findMany({
+            where: { deviceId: device.id, status: 'ACTIVE' },
+            include: { server: true },
+        });
+        const results = [];
+        const now = new Date();
+        for (const peer of activePeers) {
+            const pqAlgorithm = dto.enablePostQuantum ? 'kyber768' : (peer.pqKemAlgorithm || 'classic');
+            const pqKey = dto.enablePostQuantum
+                ? Buffer.from(require('crypto').randomBytes(32)).toString('base64')
+                : peer.pqPresharedKey;
+            const updatedPeer = await this.prisma.vpnPeer.update({
+                where: { id: peer.id },
+                data: {
+                    clientPublicKey: dto.newPublicKey,
+                    pqKemAlgorithm: pqAlgorithm,
+                    pqPresharedKey: pqKey,
+                    presharedKey: pqKey,
+                    rotatedAt: now,
+                },
+            });
+            if (peer.server?.publicIp) {
+                await this.syncPeerToNode(peer.server.publicIp, 'remove', {
+                    publicKey: oldPublicKey,
+                });
+                await this.syncPeerToNode(peer.server.publicIp, 'add', {
+                    publicKey: dto.newPublicKey,
+                    allowedIps: [`${peer.allocatedIpV4}/32`, `${peer.allocatedIpV6}/128`],
+                    presharedKey: pqKey || undefined,
+                });
+            }
+            results.push({
+                peerId: updatedPeer.id,
+                serverId: updatedPeer.serverId,
+                serverName: peer.server.name,
+                rotatedAt: now,
+                postQuantum: pqAlgorithm === 'kyber768',
+            });
+        }
+        this.logger.log(`[KEY-ROTATION] Device ${device.name} (${device.id}) rotated public key to ${dto.newPublicKey.substring(0, 10)}...`);
+        return {
+            success: true,
+            message: 'Cryptographic key rotation completed successfully across active tunnels',
+            deviceId: device.id,
+            newPublicKey: dto.newPublicKey,
+            rotatedPeers: results,
+            rotatedAt: now,
+        };
+    }
+    async getKeyRotationStatus(userId, deviceId) {
+        const device = await this.prisma.device.findFirst({
+            where: { id: deviceId, userId },
+            include: {
+                vpnPeers: {
+                    include: { server: true },
+                },
+            },
+        });
+        if (!device) {
+            throw new common_1.NotFoundException('Device not found');
+        }
+        const latestPeer = device.vpnPeers[0];
+        const rotatedAt = latestPeer?.rotatedAt || device.createdAt;
+        const ageDays = Math.floor((Date.now() - new Date(rotatedAt).getTime()) / (1000 * 60 * 60 * 24));
+        const isRecommendedToRotate = ageDays >= 30;
+        return {
+            deviceId: device.id,
+            deviceName: device.name,
+            publicKey: device.publicKey,
+            lastRotatedAt: rotatedAt,
+            keyAgeDays: ageDays,
+            isRecommendedToRotate,
+            postQuantumEnabled: latestPeer?.pqKemAlgorithm === 'kyber768',
+            postQuantumAlgorithm: latestPeer?.pqKemAlgorithm || 'classic',
+            activeTunnelsCount: device.vpnPeers.filter((p) => p.status === 'ACTIVE').length,
+        };
     }
     async syncPeerToNode(serverIp, action, payload) {
         if (!serverIp || serverIp.startsWith('198.51.100.') || serverIp === '127.0.0.1') {

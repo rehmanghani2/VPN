@@ -9,6 +9,7 @@ import { AdminModule } from './admin/admin.module';
 import { DiagnosticsModule } from './diagnostics/diagnostics.module';
 import { PortForwardingModule } from './port-forwarding/port-forwarding.module';
 import { DedicatedIpModule } from './dedicated-ip/dedicated-ip.module';
+import { MultiHopModule } from './multihop/multihop.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { DedicatedIpModule } from './dedicated-ip/dedicated-ip.module';
     DiagnosticsModule,
     PortForwardingModule,
     DedicatedIpModule,
+    MultiHopModule,
   ],
 })
 export class AppModule {}

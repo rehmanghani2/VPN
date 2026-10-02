@@ -43,4 +43,13 @@ class ApiConstants {
   static const String dedicatedIpAvailableRegions = '/dedicated-ip/available-regions';
   static const String dedicatedIpReserve = '/dedicated-ip/reserve';
   static const String dedicatedIpAssign = '/dedicated-ip/assign';
+
+  // Phase 14: Multi-Hop (Double VPN) & Onion over VPN
+  static const String multihopPairs = '/vpn/multihop/pairs';
+  static const String multihopConnect = '/vpn/multihop/connect';
+  static const String onionServers = '/vpn/onion/servers';
+
+  // Phase 15: Post-Quantum WireGuard & Key Rotation
+  static const String rotateKey = '/vpn/rotate-key';
+  static const String keyStatus = '/vpn/key-status';
 }

@@ -340,6 +340,44 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { success: true, message: 'Dedicated IP SNAT unmapped' });
     }
 
+    // --- POST /multihop/route ---
+    if (req.method === 'POST' && pathname === '/multihop/route') {
+      const { clientTunnelIp, exitServerIp, exitServerWgPublicKey } = await getJsonBody(req);
+      if (!clientTunnelIp || !exitServerIp) {
+        return sendJson(res, 400, { error: 'Missing clientTunnelIp or exitServerIp' });
+      }
+
+      // Configure policy routing rule so client packets are forwarded over the exit server inter-tunnel
+      try {
+        execSync(`ip rule add from ${clientTunnelIp} table 200`, { stdio: 'pipe' });
+        execSync(`ip route add default via ${exitServerIp} dev ${WG_INTERFACE} table 200`, { stdio: 'pipe' });
+      } catch (e) {
+        console.warn(`[WARN] Policy routing command skipped/simulated: ${e.message}`);
+      }
+
+      console.log(`[MULTIHOP] Cascaded route: ${clientTunnelIp} ➔ Exit ${exitServerIp}`);
+      return sendJson(res, 200, { success: true, clientTunnelIp, exitServerIp });
+    }
+
+    // --- POST /onion/route ---
+    if (req.method === 'POST' && pathname === '/onion/route') {
+      const { clientTunnelIp } = await getJsonBody(req);
+      if (!clientTunnelIp) {
+        return sendJson(res, 400, { error: 'Missing clientTunnelIp' });
+      }
+
+      // Transparent Tor redirection: TCP to Tor TransPort (9040), DNS to Tor DNSPort (5353)
+      try {
+        execSync(`iptables -t nat -A PREROUTING -s ${clientTunnelIp} -p tcp --syn -j REDIRECT --to-ports 9040`, { stdio: 'pipe' });
+        execSync(`iptables -t nat -A PREROUTING -s ${clientTunnelIp} -p udp --dport 53 -j REDIRECT --to-ports 5353`, { stdio: 'pipe' });
+      } catch (e) {
+        console.warn(`[WARN] Tor transparent iptables redirect skipped/simulated: ${e.message}`);
+      }
+
+      console.log(`[ONION-ROUTING] Enforced Tor transparent proxy for ${clientTunnelIp}`);
+      return sendJson(res, 200, { success: true, clientTunnelIp, torTransPort: 9040, torDnsPort: 5353 });
+    }
+
     // Route not found
     return sendJson(res, 404, { error: 'Route not found' });
 

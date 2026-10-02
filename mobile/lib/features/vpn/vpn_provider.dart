@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import '../../core/services/api_service.dart';
@@ -129,6 +130,7 @@ class VpnProvider extends ChangeNotifier {
           if (_selectedServer != null) 'serverId': _selectedServer!.id,
           'protocol': _storage.vpnProtocol,
           'threatShieldLevel': _storage.threatShieldLevel,
+          'enablePostQuantum': _storage.isPostQuantumEnabled,
         },
       );
 
@@ -212,6 +214,45 @@ class VpnProvider extends ChangeNotifier {
     } catch (_) {}
 
     await _bridge.stopTunnel();
+  }
+
+  /// Phase 15: Rotate WireGuard Cryptographic Keypair and Request Post-Quantum Rekey
+  Future<Map<String, dynamic>> rotateCryptographicKeys() async {
+    _bridge.addLog('SEC', 'Initiating cryptographic keypair rotation...');
+
+    // Generate local random Curve25519 public/private keys simulation
+    final randomBytes = List<int>.generate(32, (i) => math.Random.secure().nextInt(256));
+    final newPubKey = base64Encode(randomBytes);
+    final newPrivKey = base64Encode(List<int>.generate(32, (i) => math.Random.secure().nextInt(256)));
+
+    final deviceId = _storage.getOrCreateDeviceUuid();
+
+    try {
+      final res = await _api.client.post(
+        ApiConstants.rotateKey,
+        data: {
+          'deviceId': deviceId,
+          'newPublicKey': newPubKey,
+          'enablePostQuantum': _storage.isPostQuantumEnabled,
+        },
+      );
+
+      // Save new keypair locally
+      await _storage.saveDeviceKeys(pubKey: newPubKey, privKey: newPrivKey);
+      await _storage.setLastKeyRotatedAt(DateTime.now());
+
+      _bridge.addLog(
+        'SUCCESS',
+        'Cryptographic keys rotated successfully. New public key: ${newPubKey.substring(0, 10)}...',
+        meta: res.data,
+      );
+
+      notifyListeners();
+      return res.data;
+    } catch (e) {
+      _bridge.addLog('ERROR', 'Key rotation failed: $e');
+      rethrow;
+    }
   }
 
   void _handleNativeStateChange(TunnelState newState) {

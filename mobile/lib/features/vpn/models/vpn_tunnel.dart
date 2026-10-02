@@ -13,6 +13,10 @@ class VpnTunnel {
   final bool isObfuscated;
   final String obfuscationProtocol;
   final Map<String, dynamic>? obfuscationParams;
+  final bool isPostQuantum;
+  final String postQuantumAlgorithm;
+  final String? presharedKey;
+  final String? keyRotatedAt;
 
   VpnTunnel({
     required this.serverName,
@@ -29,6 +33,10 @@ class VpnTunnel {
     this.isObfuscated = false,
     this.obfuscationProtocol = 'NONE',
     this.obfuscationParams,
+    this.isPostQuantum = false,
+    this.postQuantumAlgorithm = 'classic',
+    this.presharedKey,
+    this.keyRotatedAt,
   });
 
   factory VpnTunnel.fromJson(Map<String, dynamic> json) {
@@ -49,6 +57,10 @@ class VpnTunnel {
       obfuscationParams: json['obfuscationParams'] != null
           ? Map<String, dynamic>.from(json['obfuscationParams'])
           : null,
+      isPostQuantum: json['isPostQuantum'] ?? false,
+      postQuantumAlgorithm: json['postQuantumAlgorithm'] ?? 'classic',
+      presharedKey: json['presharedKey'],
+      keyRotatedAt: json['keyRotatedAt'],
     );
   }
 
@@ -68,6 +80,10 @@ class VpnTunnel {
       'isObfuscated': isObfuscated,
       'obfuscationProtocol': obfuscationProtocol,
       if (obfuscationParams != null) 'obfuscationParams': obfuscationParams,
+      'isPostQuantum': isPostQuantum,
+      'postQuantumAlgorithm': postQuantumAlgorithm,
+      if (presharedKey != null) 'presharedKey': presharedKey,
+      if (keyRotatedAt != null) 'keyRotatedAt': keyRotatedAt,
     };
   }
 }

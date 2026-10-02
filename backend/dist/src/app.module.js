@@ -18,6 +18,7 @@ const admin_module_1 = require("./admin/admin.module");
 const diagnostics_module_1 = require("./diagnostics/diagnostics.module");
 const port_forwarding_module_1 = require("./port-forwarding/port-forwarding.module");
 const dedicated_ip_module_1 = require("./dedicated-ip/dedicated-ip.module");
+const multihop_module_1 = require("./multihop/multihop.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -37,6 +38,7 @@ exports.AppModule = AppModule = __decorate([
             diagnostics_module_1.DiagnosticsModule,
             port_forwarding_module_1.PortForwardingModule,
             dedicated_ip_module_1.DedicatedIpModule,
+            multihop_module_1.MultiHopModule,
         ],
     })
 ], AppModule);

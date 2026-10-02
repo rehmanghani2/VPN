@@ -88,4 +88,20 @@ class StorageService {
   static const String _keyThreatShieldLevel = 'threat_shield_level'; // 'off', 'malware_only', 'all'
   String get threatShieldLevel => _prefs.getString(_keyThreatShieldLevel) ?? 'all';
   Future<void> setThreatShieldLevel(String level) async => await _prefs.setString(_keyThreatShieldLevel, level);
+
+  // Phase 15: Post-Quantum WireGuard & Automatic Key Rotation
+  static const String _keyPostQuantumEnabled = 'post_quantum_enabled';
+  bool get isPostQuantumEnabled => _prefs.getBool(_keyPostQuantumEnabled) ?? true; // Enabled by default for maximum future-proofing
+  Future<void> setPostQuantumEnabled(bool value) async => await _prefs.setBool(_keyPostQuantumEnabled, value);
+
+  static const String _keyAutoKeyRotation = 'auto_key_rotation';
+  bool get isAutoKeyRotationEnabled => _prefs.getBool(_keyAutoKeyRotation) ?? true;
+  Future<void> setAutoKeyRotation(bool value) async => await _prefs.setBool(_keyAutoKeyRotation, value);
+
+  static const String _keyLastKeyRotatedAt = 'last_key_rotated_at';
+  DateTime? get lastKeyRotatedAt {
+    final str = _prefs.getString(_keyLastKeyRotatedAt);
+    return str != null ? DateTime.tryParse(str) : null;
+  }
+  Future<void> setLastKeyRotatedAt(DateTime dt) async => await _prefs.setString(_keyLastKeyRotatedAt, dt.toIso8601String());
 }

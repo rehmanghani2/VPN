@@ -31,6 +31,12 @@ let VpnController = class VpnController {
     async disconnect(userId, dto) {
         return this.vpnService.disconnect(userId, dto);
     }
+    async rotateKey(userId, dto) {
+        return this.vpnService.rotateKey(userId, dto);
+    }
+    async getKeyStatus(userId, deviceId) {
+        return this.vpnService.getKeyRotationStatus(userId, deviceId);
+    }
 };
 exports.VpnController = VpnController;
 __decorate([
@@ -57,6 +63,23 @@ __decorate([
     __metadata("design:paramtypes", [String, connect_dto_1.DisconnectVpnDto]),
     __metadata("design:returntype", Promise)
 ], VpnController.prototype, "disconnect", null);
+__decorate([
+    (0, common_1.Post)('rotate-key'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], VpnController.prototype, "rotateKey", null);
+__decorate([
+    (0, common_1.Get)('key-status'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('id')),
+    __param(1, (0, common_1.Query)('deviceId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], VpnController.prototype, "getKeyStatus", null);
 exports.VpnController = VpnController = __decorate([
     (0, common_1.Controller)('vpn'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

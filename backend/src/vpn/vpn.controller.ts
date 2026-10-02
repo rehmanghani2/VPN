@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Body,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -38,5 +39,22 @@ export class VpnController {
     @Body() dto: DisconnectVpnDto,
   ) {
     return this.vpnService.disconnect(userId, dto);
+  }
+
+  @Post('rotate-key')
+  @HttpCode(HttpStatus.OK)
+  async rotateKey(
+    @CurrentUser('id') userId: string,
+    @Body() dto: any,
+  ) {
+    return this.vpnService.rotateKey(userId, dto);
+  }
+
+  @Get('key-status')
+  async getKeyStatus(
+    @CurrentUser('id') userId: string,
+    @Query('deviceId') deviceId: string,
+  ) {
+    return this.vpnService.getKeyRotationStatus(userId, deviceId);
   }
 }

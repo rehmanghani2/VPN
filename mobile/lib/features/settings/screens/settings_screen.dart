@@ -11,6 +11,7 @@ import '../../billing/screens/subscription_screen.dart';
 import '../../devices/screens/devices_screen.dart';
 import '../../speedtest/screens/speed_test_screen.dart';
 import '../../diagnostics/screens/leak_test_screen.dart';
+import '../../diagnostics/screens/diagnostics_logs_screen.dart';
 import '../../port_forwarding/screens/port_forwarding_screen.dart';
 import '../../dedicated_ip/screens/dedicated_ip_screen.dart';
 
@@ -489,6 +490,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const LeakTestScreen()),
+                    );
+                  },
+                ),
+                const Divider(height: 1, color: AppTheme.surfaceLight),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accent.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.terminal_rounded, color: AppTheme.accent, size: 20),
+                  ),
+                  title: const Text(
+                    'Connection Logs & Key Rotation',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                  subtitle: const Text(
+                    'Real-time debug event stream, Kyber768 rekeying, and support bundle exporter',
+                    style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  ),
+                  trailing: const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const DiagnosticsLogsScreen()),
                     );
                   },
                 ),

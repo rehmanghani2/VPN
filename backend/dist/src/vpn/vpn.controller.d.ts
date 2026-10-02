@@ -5,12 +5,12 @@ export declare class VpnController {
     constructor(vpnService: VpnService);
     listServers(): Promise<{
         id: string;
-        status: string;
         name: string;
         countryCode: string;
         countryName: string;
         city: string;
         hostname: string;
+        status: string;
         capacity: number;
         currentLoad: number;
         isObfuscated: boolean;
@@ -40,11 +40,34 @@ export declare class VpnController {
                 initiationHeader: string;
                 responseHeader: string;
             };
+            isPostQuantum: boolean;
+            postQuantumAlgorithm: string;
+            presharedKey: string;
+            keyRotatedAt: string;
         };
         peerId: string;
         status: string;
     }>;
     disconnect(userId: string, dto: DisconnectVpnDto): Promise<{
         message: string;
+    }>;
+    rotateKey(userId: string, dto: any): Promise<{
+        success: boolean;
+        message: string;
+        deviceId: string;
+        newPublicKey: string;
+        rotatedPeers: any[];
+        rotatedAt: Date;
+    }>;
+    getKeyStatus(userId: string, deviceId: string): Promise<{
+        deviceId: string;
+        deviceName: string;
+        publicKey: string;
+        lastRotatedAt: Date;
+        keyAgeDays: number;
+        isRecommendedToRotate: boolean;
+        postQuantumEnabled: boolean;
+        postQuantumAlgorithm: string;
+        activeTunnelsCount: number;
     }>;
 }

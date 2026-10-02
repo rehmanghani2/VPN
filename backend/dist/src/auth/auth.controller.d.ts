@@ -17,10 +17,10 @@ export declare class AuthController {
             role: string;
             subscription: {
                 id: string;
-                userId: string;
                 status: string;
                 createdAt: Date;
                 updatedAt: Date;
+                userId: string;
                 planType: string;
                 maxDevices: number;
                 expiresAt: Date | null;
@@ -39,10 +39,10 @@ export declare class AuthController {
             role: string;
             subscription: {
                 id: string;
-                userId: string;
                 status: string;
                 createdAt: Date;
                 updatedAt: Date;
+                userId: string;
                 planType: string;
                 maxDevices: number;
                 expiresAt: Date | null;
@@ -58,10 +58,10 @@ export declare class AuthController {
     getMe(userId: string): Promise<{
         activeSubscription: {
             id: string;
-            userId: string;
             status: string;
             createdAt: Date;
             updatedAt: Date;
+            userId: string;
             planType: string;
             maxDevices: number;
             expiresAt: Date | null;
@@ -73,18 +73,18 @@ export declare class AuthController {
         role: string;
         devices: {
             id: string;
+            name: string;
             createdAt: Date;
             deviceIdentifier: string;
-            name: string;
             platform: string;
             lastSeenAt: Date;
         }[];
         subscriptions: {
             id: string;
-            userId: string;
             status: string;
             createdAt: Date;
             updatedAt: Date;
+            userId: string;
             planType: string;
             maxDevices: number;
             expiresAt: Date | null;
