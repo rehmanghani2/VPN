@@ -30,9 +30,33 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            val keystorePropertiesFile = rootProject.file("key.properties")
+            if (keystorePropertiesFile.exists()) {
+                val properties = java.util.Properties()
+                properties.load(java.io.FileInputStream(keystorePropertiesFile))
+                keyAlias = properties.getProperty("keyAlias")
+                keyPassword = properties.getProperty("keyPassword")
+                val storeFilePath = properties.getProperty("storeFile")
+                storeFile = if (storeFilePath != null) file(storeFilePath) else null
+                storePassword = properties.getProperty("storePassword")
+            } else {
+                // Fallback to debug keystore for automated builds
+                val debugConfig = signingConfigs.getByName("debug")
+                keyAlias = debugConfig.keyAlias
+                keyPassword = debugConfig.keyPassword
+                storeFile = debugConfig.storeFile
+                storePassword = debugConfig.storePassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }

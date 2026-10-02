@@ -1,0 +1,7 @@
+# Release Keystore Configuration Template
+# Create key with: keytool -genkey -v -keystore release.keystore -alias vpn_release_key -keyalg RSA -keysize 2048 -validity 10000
+# IMPORTANT: Never commit actual key.properties or .keystore / .jks files to git.
+storePassword=your_keystore_password_here
+keyPassword=your_key_password_here
+keyAlias=vpn_release_key
+storeFile=release.keystore
