@@ -1,0 +1,28 @@
+# ==============================================================================
+# Oracle Cloud Always Free VPN - Example Credentials (terraform.tfvars.example)
+# Rename to 'terraform.tfvars' and insert your OCI details
+# ==============================================================================
+
+# 1. Oracle Cloud Account Identifiers
+tenancy_ocid     = "ocid1.tenancy.oc1..aaaaaaaaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+user_ocid        = "ocid1.user.oc1..aaaaaaaaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+compartment_ocid = "ocid1.tenancy.oc1..aaaaaaaaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# 2. API Key Pair
+fingerprint      = "12:34:56:78:9a:bc:de:f0:12:34:56:78:9a:bc:de:f0"
+private_key_path = "C:/Users/YourUser/.oci/oci_api_key.pem"
+region           = "us-ashburn-1" # Or: eu-frankfurt-1, ap-singapore-1, etc.
+
+# 3. SSH Public Key for Administrator Access
+ssh_public_key   = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... user@laptop"
+
+# 4. Central Control Plane Integration
+backend_api_url  = "http://YOUR_CENTRAL_BACKEND_IP:3000/api/v1"
+node_country_code = "US"
+node_country_name = "United States"
+node_city         = "Ashburn"
+
+# 5. Always Free VM Hardware Sizing
+node_ocpus         = 2   # 1 to 4 OCPUs (Always Free limit: 4 total)
+node_memory_in_gbs = 12  # Up to 24 GB RAM (Always Free limit: 24 total)
+boot_volume_size_gbs = 50 # Up to 200 GB Storage (Always Free limit: 200 total)
