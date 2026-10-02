@@ -15,6 +15,8 @@ model User {
   role          String         @default("USER")
   devices       Device[]
   subscriptions Subscription[]
+  dedicatedIps  DedicatedIp[]
+  portForwards  PortForwardRule[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
@@ -31,6 +33,7 @@ model Device {
   publicKey        String
   lastSeenAt       DateTime  @default(now())
   vpnPeers         VpnPeer[]
+  portForwards     PortForwardRule[]
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -59,6 +62,8 @@ model VpnServer {
   obfuscationPort     Int       @default(443)
   obfuscationProtocol String    @default("NONE")
   vpnPeers            VpnPeer[]
+  dedicatedIps        DedicatedIp[]
+  portForwards        PortForwardRule[]
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
@@ -95,4 +100,38 @@ model Subscription {
   updatedAt  DateTime  @updatedAt
 
   @@map("subscriptions")
+}
+
+model DedicatedIp {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serverId    String
+  server      VpnServer @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  publicIp    String    @unique
+  status      String    @default("ACTIVE") // ACTIVE, RESERVED, EXPIRED
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("dedicated_ips")
+}
+
+model PortForwardRule {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId     String
+  device       Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  serverId     String
+  server       VpnServer @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  externalPort Int
+  internalPort Int
+  protocol     String    @default("BOTH") // TCP, UDP, BOTH
+  status       String    @default("ACTIVE") // ACTIVE, DISABLED
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([serverId, externalPort, protocol])
+  @@map("port_forward_rules")
 }

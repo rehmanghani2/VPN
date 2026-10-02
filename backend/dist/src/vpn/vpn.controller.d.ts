@@ -5,12 +5,12 @@ export declare class VpnController {
     constructor(vpnService: VpnService);
     listServers(): Promise<{
         id: string;
+        status: string;
         name: string;
         countryCode: string;
         countryName: string;
         city: string;
         hostname: string;
-        status: string;
         capacity: number;
         currentLoad: number;
         isObfuscated: boolean;

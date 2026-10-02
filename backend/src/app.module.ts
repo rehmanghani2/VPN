@@ -7,6 +7,8 @@ import { VpnModule } from './vpn/vpn.module';
 import { BillingModule } from './billing/billing.module';
 import { AdminModule } from './admin/admin.module';
 import { DiagnosticsModule } from './diagnostics/diagnostics.module';
+import { PortForwardingModule } from './port-forwarding/port-forwarding.module';
+import { DedicatedIpModule } from './dedicated-ip/dedicated-ip.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { DiagnosticsModule } from './diagnostics/diagnostics.module';
     BillingModule,
     AdminModule,
     DiagnosticsModule,
+    PortForwardingModule,
+    DedicatedIpModule,
   ],
 })
 export class AppModule {}

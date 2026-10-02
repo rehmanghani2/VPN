@@ -11,6 +11,8 @@ import '../../billing/screens/subscription_screen.dart';
 import '../../devices/screens/devices_screen.dart';
 import '../../speedtest/screens/speed_test_screen.dart';
 import '../../diagnostics/screens/leak_test_screen.dart';
+import '../../port_forwarding/screens/port_forwarding_screen.dart';
+import '../../dedicated_ip/screens/dedicated_ip_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -487,6 +489,82 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const LeakTestScreen()),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // 4. Advanced Networking & Dedicated IP Section
+          const Text(
+            'ADVANCED NETWORKING & DEDICATED IP',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.surfaceLight),
+            ),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.add_moderator, color: AppTheme.primary, size: 20),
+                  ),
+                  title: const Text(
+                    'Dedicated IP',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                  subtitle: const Text(
+                    'Exclusive static IP for banking, whitelisting, and zero-CAPTCHA browsing',
+                    style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  ),
+                  trailing: const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const DedicatedIpScreen()),
+                    );
+                  },
+                ),
+                const Divider(height: 1, color: AppTheme.surfaceLight),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accent.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.alt_route_rounded, color: AppTheme.accent, size: 20),
+                  ),
+                  title: const Text(
+                    'Port Forwarding (NAT)',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                  subtitle: const Text(
+                    'Forward incoming public ports to your tunnel for P2P, hosting & gaming',
+                    style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  ),
+                  trailing: const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const PortForwardingScreen()),
                     );
                   },
                 ),

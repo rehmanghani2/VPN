@@ -21,13 +21,13 @@ export declare class AuthService {
             role: string;
             subscription: {
                 id: string;
+                userId: string;
                 status: string;
                 createdAt: Date;
                 updatedAt: Date;
                 planType: string;
                 maxDevices: number;
                 expiresAt: Date | null;
-                userId: string;
             };
         };
     }>;
@@ -43,13 +43,13 @@ export declare class AuthService {
             role: string;
             subscription: {
                 id: string;
+                userId: string;
                 status: string;
                 createdAt: Date;
                 updatedAt: Date;
                 planType: string;
                 maxDevices: number;
                 expiresAt: Date | null;
-                userId: string;
             };
         };
     }>;
@@ -62,36 +62,36 @@ export declare class AuthService {
     getMe(userId: string): Promise<{
         activeSubscription: {
             id: string;
+            userId: string;
             status: string;
             createdAt: Date;
             updatedAt: Date;
             planType: string;
             maxDevices: number;
             expiresAt: Date | null;
-            userId: string;
         };
         id: string;
-        email: string;
         status: string;
-        role: string;
         createdAt: Date;
+        email: string;
+        role: string;
         devices: {
             id: string;
             createdAt: Date;
-            name: string;
             deviceIdentifier: string;
+            name: string;
             platform: string;
             lastSeenAt: Date;
         }[];
         subscriptions: {
             id: string;
+            userId: string;
             status: string;
             createdAt: Date;
             updatedAt: Date;
             planType: string;
             maxDevices: number;
             expiresAt: Date | null;
-            userId: string;
         }[];
     }>;
     private generateTokens;

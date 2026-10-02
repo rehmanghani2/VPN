@@ -6,12 +6,12 @@ export declare class VpnService {
     constructor(prisma: PrismaService);
     listServers(): Promise<{
         id: string;
+        status: string;
         name: string;
         countryCode: string;
         countryName: string;
         city: string;
         hostname: string;
-        status: string;
         capacity: number;
         currentLoad: number;
         isObfuscated: boolean;

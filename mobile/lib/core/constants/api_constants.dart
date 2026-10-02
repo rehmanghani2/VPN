@@ -36,4 +36,11 @@ class ApiConstants {
   // Privacy & Zero-Leak Diagnostics
   static const String diagnosticsIp = '/diagnostics/ip';
   static const String diagnosticsLeakAudit = '/diagnostics/leak-audit';
+
+  // Phase 13: Dedicated IP & Port Forwarding
+  static const String portForwarding = '/port-forwarding';
+  static const String dedicatedIp = '/dedicated-ip';
+  static const String dedicatedIpAvailableRegions = '/dedicated-ip/available-regions';
+  static const String dedicatedIpReserve = '/dedicated-ip/reserve';
+  static const String dedicatedIpAssign = '/dedicated-ip/assign';
 }

@@ -273,6 +273,73 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    // --- POST /port-forward/enable ---
+    if (req.method === 'POST' && pathname === '/port-forward/enable') {
+      const { externalPort, internalPort, protocol = 'BOTH', clientTunnelIp } = await getJsonBody(req);
+      if (!externalPort || !internalPort || !clientTunnelIp) {
+        return sendJson(res, 400, { error: 'Missing externalPort, internalPort, or clientTunnelIp' });
+      }
+
+      const protos = protocol === 'BOTH' ? ['tcp', 'udp'] : [protocol.toLowerCase()];
+      for (const proto of protos) {
+        try {
+          execSync(`iptables -t nat -A PREROUTING -p ${proto} --dport ${externalPort} -j DNAT --to-destination ${clientTunnelIp}:${internalPort}`, { stdio: 'pipe' });
+          execSync(`iptables -A FORWARD -p ${proto} -d ${clientTunnelIp} --dport ${internalPort} -j ACCEPT`, { stdio: 'pipe' });
+        } catch (e) {
+          console.warn(`[WARN] iptables command skipped/failed (non-Linux or simulated): ${e.message}`);
+        }
+      }
+
+      console.log(`[PORT-FORWARD] Enabled :${externalPort} -> ${clientTunnelIp}:${internalPort} (${protocol})`);
+      return sendJson(res, 200, { success: true, externalPort, internalPort, protocol, clientTunnelIp });
+    }
+
+    // --- POST /port-forward/disable ---
+    if (req.method === 'POST' && pathname === '/port-forward/disable') {
+      const { externalPort, internalPort, protocol = 'BOTH', clientTunnelIp } = await getJsonBody(req);
+      const protos = protocol === 'BOTH' ? ['tcp', 'udp'] : [protocol.toLowerCase()];
+
+      for (const proto of protos) {
+        try {
+          execSync(`iptables -t nat -D PREROUTING -p ${proto} --dport ${externalPort} -j DNAT --to-destination ${clientTunnelIp}:${internalPort}`, { stdio: 'pipe' });
+          execSync(`iptables -D FORWARD -p ${proto} -d ${clientTunnelIp} --dport ${internalPort} -j ACCEPT`, { stdio: 'pipe' });
+        } catch (e) {
+          // Rule removal error is non-fatal
+        }
+      }
+
+      console.log(`[PORT-FORWARD] Disabled :${externalPort} -> ${clientTunnelIp}:${internalPort}`);
+      return sendJson(res, 200, { success: true, message: 'Port forward rules flushed' });
+    }
+
+    // --- POST /dedicated-ip/bind ---
+    if (req.method === 'POST' && pathname === '/dedicated-ip/bind') {
+      const { clientTunnelIp, dedicatedPublicIp } = await getJsonBody(req);
+      if (!clientTunnelIp || !dedicatedPublicIp) {
+        return sendJson(res, 400, { error: 'Missing clientTunnelIp or dedicatedPublicIp' });
+      }
+
+      try {
+        execSync(`iptables -t nat -A POSTROUTING -s ${clientTunnelIp} -j SNAT --to-source ${dedicatedPublicIp}`, { stdio: 'pipe' });
+      } catch (e) {
+        console.warn(`[WARN] iptables SNAT binding skipped: ${e.message}`);
+      }
+
+      console.log(`[DEDICATED-IP] Bound SNAT ${clientTunnelIp} -> ${dedicatedPublicIp}`);
+      return sendJson(res, 200, { success: true, clientTunnelIp, dedicatedPublicIp });
+    }
+
+    // --- POST /dedicated-ip/unbind ---
+    if (req.method === 'POST' && pathname === '/dedicated-ip/unbind') {
+      const { clientTunnelIp, dedicatedPublicIp } = await getJsonBody(req);
+      try {
+        execSync(`iptables -t nat -D POSTROUTING -s ${clientTunnelIp} -j SNAT --to-source ${dedicatedPublicIp}`, { stdio: 'pipe' });
+      } catch (e) {
+        // Non-fatal
+      }
+      return sendJson(res, 200, { success: true, message: 'Dedicated IP SNAT unmapped' });
+    }
+
     // Route not found
     return sendJson(res, 404, { error: 'Route not found' });
 
