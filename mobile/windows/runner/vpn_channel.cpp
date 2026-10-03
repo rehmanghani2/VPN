@@ -16,6 +16,41 @@ namespace {
 static std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> g_vpn_channel = nullptr;
 static bool g_is_connected = false;
 
+// Connect to the privileged Windows Service over Named Pipe IPC
+bool SendIpcCommand(const std::string& jsonCommand, std::string& outResponse) {
+    HANDLE hPipe = CreateFileW(
+        L"\\\\.\\pipe\\AntigravityVpnIpc",
+        GENERIC_READ | GENERIC_WRITE,
+        0,
+        NULL,
+        OPEN_EXISTING,
+        0,
+        NULL);
+
+    if (hPipe == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+
+    std::string payload = jsonCommand + "\n";
+    DWORD bytesWritten = 0;
+    if (!WriteFile(hPipe, payload.c_str(), static_cast<DWORD>(payload.length()), &bytesWritten, NULL)) {
+        CloseHandle(hPipe);
+        return false;
+    }
+
+    char buffer[4096];
+    DWORD bytesRead = 0;
+    if (ReadFile(hPipe, buffer, sizeof(buffer) - 1, &bytesRead, NULL) && bytesRead > 0) {
+        buffer[bytesRead] = '\0';
+        outResponse = std::string(buffer);
+        CloseHandle(hPipe);
+        return true;
+    }
+
+    CloseHandle(hPipe);
+    return false;
+}
+
 std::wstring GetConfigDirectory() {
     wchar_t path[MAX_PATH];
     if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, path))) {
@@ -171,6 +206,35 @@ void RegisterVpnChannel(flutter::BinaryMessenger* messenger) {
                     SetWindowsKillSwitch(true, endpoint);
                 }
 
+                // Phase 18: Try privileged background Windows Service over Named Pipe IPC first
+                std::string clientIp = "10.8.0.2";
+                auto ipIt = args->find(flutter::EncodableValue("clientAddressV4"));
+                if (ipIt != args->end() && std::holds_alternative<std::string>(ipIt->second)) {
+                    clientIp = std::get<std::string>(ipIt->second);
+                    size_t slash = clientIp.find('/');
+                    if (slash != std::string::npos) clientIp = clientIp.substr(0, slash);
+                }
+
+                std::ostringstream jsonStream;
+                jsonStream << "{\"Command\":\"StartTunnel\","
+                           << "\"ClientAddressV4\":\"" << clientIp << "\","
+                           << "\"Endpoint\":\"" << endpoint << "\","
+                           << "\"KillSwitch\":" << (killSwitch ? "true" : "false") << "}";
+
+                std::string ipcResponse;
+                if (SendIpcCommand(jsonStream.str(), ipcResponse)) {
+                    g_is_connected = true;
+                    if (g_vpn_channel) {
+                        flutter::EncodableMap stateMap;
+                        stateMap[flutter::EncodableValue("state")] = flutter::EncodableValue("connected");
+                        g_vpn_channel->InvokeMethod("onTunnelStateChanged",
+                            std::make_unique<flutter::EncodableValue>(stateMap));
+                    }
+                    result->Success(flutter::EncodableValue(true));
+                    return;
+                }
+
+                // Fallback: If Windows background service is not running, run elevated executable fallback
                 std::wstring wgExe = FindWireGuardExecutable();
                 if (!wgExe.empty()) {
                     // Install and start tunnel service with Wintun
@@ -191,7 +255,21 @@ void RegisterVpnChannel(flutter::BinaryMessenger* messenger) {
                 result->Success(flutter::EncodableValue(true));
             }
             else if (method == "stopTunnel") {
-                // Remove Windows Kill Switch firewall rules
+                // Try privileged background Windows Service over Named Pipe IPC first
+                std::string ipcResponse;
+                if (SendIpcCommand("{\"Command\":\"StopTunnel\"}", ipcResponse)) {
+                    g_is_connected = false;
+                    if (g_vpn_channel) {
+                        flutter::EncodableMap stateMap;
+                        stateMap[flutter::EncodableValue("state")] = flutter::EncodableValue("disconnected");
+                        g_vpn_channel->InvokeMethod("onTunnelStateChanged",
+                            std::make_unique<flutter::EncodableValue>(stateMap));
+                    }
+                    result->Success(flutter::EncodableValue(true));
+                    return;
+                }
+
+                // Fallback: Remove Windows Kill Switch firewall rules
                 SetWindowsKillSwitch(false);
 
                 std::wstring wgExe = FindWireGuardExecutable();

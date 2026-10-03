@@ -36,8 +36,21 @@ Name: "autostart"; Description: "Launch Antigravity VPN automatically on Windows
 [Files]
 ; Release Flutter Windows Binary Bundle
 Source: "..\build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Elevated Background Windows Service for Wintun IPC (runs as SYSTEM)
+Source: "..\..\windows-service\bin\Debug\net9.0-windows\*"; DestDir: "{app}\service"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Wintun high-performance kernel TUN driver (64-bit)
-Source: "..\windows\wintun\wintun.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\windows\wintun\wintun.dll"; DestDir: "{app}\service"; Flags: ignoreversion
+
+[Run]
+; Install and start privileged Windows Service on install
+Filename: "{sys}\sc.exe"; Parameters: "create AntigravityVpnTunnelService binPath=""{app}\service\AntigravityVpnService.exe"" start=auto"; Flags: runhidden
+Filename: "{sys}\sc.exe"; Parameters: "start AntigravityVpnTunnelService"; Flags: runhidden
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[UninstallRun]
+; Stop and remove privileged Windows Service on uninstall
+Filename: "{sys}\sc.exe"; Parameters: "stop AntigravityVpnTunnelService"; Flags: runhidden
+Filename: "{sys}\sc.exe"; Parameters: "delete AntigravityVpnTunnelService"; Flags: runhidden
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
