@@ -14,6 +14,7 @@ import '../../diagnostics/screens/leak_test_screen.dart';
 import '../../diagnostics/screens/diagnostics_logs_screen.dart';
 import '../../port_forwarding/screens/port_forwarding_screen.dart';
 import '../../dedicated_ip/screens/dedicated_ip_screen.dart';
+import 'wifi_trust_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -372,6 +373,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onChanged: (val) {
                     setState(() => _autoConnect = val);
                     storage.setAutoConnect(val);
+                  },
+                ),
+                const Divider(height: 1, color: AppTheme.surfaceLight),
+                ListTile(
+                  title: const Text(
+                    'Wi-Fi Trust & Captive Portals',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                  subtitle: Text(
+                    storage.isWifiTrustManagerEnabled
+                        ? '${storage.trustedWifiSsids.length} trusted networks • Captive portal bypass active'
+                        : 'Manage trusted SSIDs and airport/hotel login bypass',
+                    style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: storage.isWifiTrustManagerEnabled
+                              ? AppTheme.primary.withOpacity(0.2)
+                              : AppTheme.surfaceLight,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          storage.isWifiTrustManagerEnabled ? 'ACTIVE' : 'OFF',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: storage.isWifiTrustManagerEnabled
+                                ? AppTheme.primary
+                                : AppTheme.textSecondary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+                    ],
+                  ),
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const WifiTrustScreen()),
+                    );
+                    setState(() {});
                   },
                 ),
                 const Divider(height: 1, color: AppTheme.surfaceLight),

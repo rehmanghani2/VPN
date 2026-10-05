@@ -113,4 +113,32 @@ class StorageService {
   static const String _keyFailoverLatencyThreshold = 'failover_latency_threshold';
   int get failoverLatencyThresholdMs => _prefs.getInt(_keyFailoverLatencyThreshold) ?? 220; // 220ms threshold
   Future<void> setFailoverLatencyThreshold(int ms) async => await _prefs.setInt(_keyFailoverLatencyThreshold, ms);
+
+  // Phase 19: Custom Ad-Blocker & Threat Shield Filter Lists
+  static const String _keyCustomBlocklists = 'custom_blocklists';
+  List<String> get customBlocklists => _prefs.getStringList(_keyCustomBlocklists) ?? [
+    'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts',
+  ];
+  Future<void> setCustomBlocklists(List<String> lists) async => await _prefs.setStringList(_keyCustomBlocklists, lists);
+
+  static const String _keyCustomBlockedDomains = 'custom_blocked_domains';
+  List<String> get customBlockedDomains => _prefs.getStringList(_keyCustomBlockedDomains) ?? [
+    'ads.tiktok.com',
+    'telemetry.app.internal',
+  ];
+  Future<void> setCustomBlockedDomains(List<String> domains) async => await _prefs.setStringList(_keyCustomBlockedDomains, domains);
+
+  // Phase 19: Tor Pluggable Transports (Obfs4 / Snowflake)
+  static const String _keyTorTransport = 'tor_pluggable_transport'; // 'direct', 'obfs4', 'snowflake'
+  String get torPluggableTransport => _prefs.getString(_keyTorTransport) ?? 'snowflake';
+  Future<void> setTorPluggableTransport(String transport) async => await _prefs.setString(_keyTorTransport, transport);
+
+  // Phase 19: Automated Wi-Fi Trust Manager & Captive Portal Bypass
+  static const String _keyWifiTrustManagerEnabled = 'wifi_trust_manager_enabled';
+  bool get isWifiTrustManagerEnabled => _prefs.getBool(_keyWifiTrustManagerEnabled) ?? true;
+  Future<void> setWifiTrustManagerEnabled(bool value) async => await _prefs.setBool(_keyWifiTrustManagerEnabled, value);
+
+  static const String _keyTrustedWifiSsids = 'trusted_wifi_ssids';
+  List<String> get trustedWifiSsids => _prefs.getStringList(_keyTrustedWifiSsids) ?? ['Home_5G', 'Office_Secure'];
+  Future<void> setTrustedWifiSsids(List<String> ssids) async => await _prefs.setStringList(_keyTrustedWifiSsids, ssids);
 }

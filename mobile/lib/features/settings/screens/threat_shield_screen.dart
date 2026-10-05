@@ -4,6 +4,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/constants/api_constants.dart';
+import 'custom_filters_screen.dart';
 
 class ThreatShieldScreen extends StatefulWidget {
   const ThreatShieldScreen({super.key});
@@ -207,6 +208,40 @@ class _ThreatShieldScreenState extends State<ThreatShieldScreen> {
                   icon: Icons.track_changes,
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Custom Filter Lists & Blacklists Button
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.surfaceLight),
+            ),
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.rule_folder_rounded, color: AppTheme.primary, size: 20),
+              ),
+              title: const Text(
+                'Custom Filter Lists & Blacklists',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              ),
+              subtitle: const Text(
+                'Subscribe to Pi-hole feeds or sinkhole custom hostnames',
+                style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+              ),
+              trailing: const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CustomFiltersScreen()),
+                );
+              },
             ),
           ),
         ],

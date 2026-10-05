@@ -324,6 +324,66 @@ class _MultiHopScreenState extends State<MultiHopScreen> with SingleTickerProvid
           ),
         ),
         const SizedBox(height: 16),
+        // Pluggable Transport Selector Card
+        Consumer<StorageService>(
+          builder: (context, storage, _) {
+            final currentTransport = storage.torPluggableTransport;
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.surfaceLight),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'PLUGGABLE TRANSPORT BRIDGE',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accent.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          currentTransport.toUpperCase(),
+                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.accent),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Camouflages Tor traffic against national firewalls and Deep Packet Inspection (DPI) systems.',
+                    style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      _buildTransportChip(context, storage, 'snowflake', 'Snowflake', 'WebRTC Proxies (Censorship Resistant)'),
+                      const SizedBox(width: 8),
+                      _buildTransportChip(context, storage, 'obfs4', 'Obfs4', 'Scrambled TCP'),
+                      const SizedBox(width: 8),
+                      _buildTransportChip(context, storage, 'direct', 'Direct', 'Standard Tor'),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 16),
         ..._onionServers.map((s) => _buildOnionCard(s)),
       ],
     );
@@ -403,6 +463,45 @@ class _MultiHopScreenState extends State<MultiHopScreen> with SingleTickerProvid
             child: const Text('CONNECT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTransportChip(BuildContext context, StorageService storage, String key, String title, String subtitle) {
+    final isSelected = storage.torPluggableTransport == key;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          storage.setTorPluggableTransport(key);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? AppTheme.accent.withOpacity(0.2) : AppTheme.background,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected ? AppTheme.accent : AppTheme.surfaceLight,
+              width: isSelected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? AppTheme.accent : Colors.white,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                key == 'snowflake' ? 'WebRTC' : key == 'obfs4' ? 'Scrambled' : 'Standard',
+                style: const TextStyle(fontSize: 9, color: AppTheme.textSecondary),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
